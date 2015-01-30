@@ -1,0 +1,1162 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: javascript | Fancy Pixel]]></title>
+  <link href="http://fancypixel.github.io/blog/categories/javascript/atom.xml" rel="self"/>
+  <link href="http://fancypixel.github.io/"/>
+  <updated>2015-01-30T14:21:55+01:00</updated>
+  <id>http://fancypixel.github.io/</id>
+  <author>
+    <name><![CDATA[Fancy Pixel]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[React + Flux backed by Rails API - Part 2]]></title>
+    <link href="http://fancypixel.github.io/blog/2015/01/29/react-plus-flux-backed-by-rails-api-part-2/"/>
+    <updated>2015-01-29T10:31:00+01:00</updated>
+    <id>http://fancypixel.github.io/blog/2015/01/29/react-plus-flux-backed-by-rails-api-part-2</id>
+    <content type="html"><![CDATA[<p>This is the second part of &ldquo;React + Flux backed by Rails API&rdquo;, make sure to checkout Part 1.
+In part 1 we created our fancy Rails API, setup the authentication and defined a resource for our tiny clone of Medium.
+Time to reach the core of this post: the frontend.</p>
+
+<!-- More -->
+
+
+<h1>Settin up the frontend</h1>
+
+<p>The whole idea behind splitting the backend from the fronted is to treat the web UI as a first class citizen, sitting in its own folder, in its own repo, with no bindings from the backend. The backend can be easily interchanged, as long as the API specs remain consistent. So we&rsquo;ll create a new app from scratch. We have the option to use automated tools like Yeoman, but I wasn&rsquo;t able to find the solution that fit all my need.</p>
+
+<h2>Tools</h2>
+
+<p>I&rsquo;ll be using node&rsquo;s NPM to fetch the main tools, Gulp for the build and watch tasks, and Bower for the resources.
+Before diving in the details, I have to warn you, I&rsquo;m awful with gulp, I&rsquo;m still learning, so I pretty much gathered tasks around the web. So take my gulp file lightly, I&rsquo;m planning on fixing all the horrors as soon as I can.
+You&rsquo;ll find the package.sjon and gulpfile.js in the sample repo, to make a longstory short we&rsquo;ll be using React.js (obviously), react-router, superagent for the ajax calls and flux. As I said before, Flux is just an architecture, so what am I importing really in my package.json? Turns out that Facebook release a small library called flux that contains basically the code for a Flux Dispatcher (more on that later), that will cut down the amoun of boilerplate code that we&rsquo;ll need to get started.</p>
+
+<h2>Flux Architecture</h2>
+
+<p>If you already took a stab at Flux you might know this diagram:
+<img class="center" src="/images/posts/2015-01-29/flux.png" width="640" height="320" title="&lsquo;Flux architecture&rsquo;" ></p>
+
+<p>It might not be easy to understand at first, but it makes more and more sense while you are implementing all those coloured blocks. Let me shed some light over it.
+The leftmost block is our Web API, we built that in the previous part of this blog post, so we are set. Our API will be called by the &ldquo;Web API Utils&rdquo;, that&rsquo;s just a plain JS file making ajax requests. Eventually this JS component will receive an AJAX callback, and needs to update our frontend app. It does that using Actions. An action is just a data sctructure that tells the system what happened and what payload is associated with that action.
+There are two types of actions: the one initiaded by a server (e.g.: an AJAX callback) and those initiated by the views (e.g.: the user click a button).
+The actions are created through Action Creators, that are really just utility functions that build the action and toss it to the system, or to be more precise, the dispatcher.
+the dispatcher is a single object (one per app) that, as the name suggests, dispatches actions to those who registered interest in them. It&rsquo;s just a pub-sub mechanism, plain and simple.
+The object that register interest in this actions are called Stores. Stores contain the applciation logic and state. They are similar to a model, but they manage the state of all the objects, not a single record.
+Stores are the one offering the state that will be presented by the React views. React views should hold as few state as possible, they should grab the state of the data from a store, and pass the state to their children as props.
+That&rsquo;s it really, it seems rather convoluted at first, but an example can clear the fog, let&rsquo;s consider the login process:</p>
+
+<ul>
+<li>The user enters his username and password, and clicks Login</li>
+<li>The React view handles the click event, grabs the content of the fields and creates an action through an action creator, with the tag <code>LOGIN_REQUEST</code> and a payload with the user&rsquo;s credentials</li>
+<li>The Action creator creates the <code>LOGIN_REQUEST</code> with its payload, and alerts the Dispatcher</li>
+<li>The Action creator also calls the Web API utils, passing the payload</li>
+<li>The Web API Utils perform the AJAX call</li>
+<li>The Web API responds authenticating the user, providing the repsonse JSON</li>
+<li>The Web API Utils receive the JSON and creates a new action, called LOGIN_RESPONSE, with the JSON as payload.</li>
+<li>The dispatcher is notified, and forwards the action to the store(s) that is(are) interesetd in a LOGIN_RESPONSE</li>
+<li>The store (e.g.: a SessionStore) gets notified and extracts the payload from the action</li>
+<li>The store updates its state (username, auth token and login state set to true)</li>
+<li>The store emits its changes</li>
+<li>The React views are notified of the changes</li>
+<li>The React views can grab the state from the store, and if needed pass the state to their children</li>
+</ul>
+
+
+<p>And that&rsquo;s it. Looks like a lot of work for a simple login, but this pattern can be applied to every action performed by the user or the server. It keeps the main components decoupled, it&rsquo;s easier to maintain, and best of all, everything is tidy, for once.</p>
+
+<p>Ok, that was a mouthful, let&rsquo;s see some code.</p>
+
+<h1>Project stucture</h1>
+
+<p>We&rsquo;ll start with the project structure.
+<code>
+aa.jsx
+</code>
+app.jsx will be our mounting point, it will render the app in our html template, nothing fancy:
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">var</span> <span class="nx">React</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;</span><span class="nx">react</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;);</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">router</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;.</span><span class="o">/</span><span class="nx">stores</span><span class="o">/</span><span class="nx">RouteStore</span><span class="p">.</span><span class="nx">react</span><span class="p">.</span><span class="nx">jsx</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;).</span><span class="nx">getRouter</span><span class="p">();</span>
+</span><span class='line'><span class="nb">window</span><span class="p">.</span><span class="nx">React</span> <span class="o">=</span> <span class="nx">React</span><span class="p">;</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span><span class="nx">router</span><span class="p">.</span><span class="nx">run</span><span class="p">(</span><span class="kd">function</span> <span class="p">(</span><span class="nx">Handler</span><span class="p">,</span> <span class="nx">state</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="nx">React</span><span class="p">.</span><span class="nx">render</span><span class="p">(</span><span class="o">&lt;</span><span class="nx">Handler</span><span class="o">/&gt;</span><span class="p">,</span> <span class="nb">document</span><span class="p">.</span><span class="nx">getElementById</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;</span><span class="nx">content</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;));</span>
+</span><span class='line'><span class="p">});</span>
+</span></code></pre></td></tr></table></div></figure>
+That&rsquo;s our first taste of React and JSX. JSX is a JS extension that lets us write nodes with a syntax similiar to XML. It&rsquo;s optional, but it cleans up the syntax and can be handled with ease by designers.</p>
+
+<h2>Routes</h2>
+
+<p><code>router.jsx</code> holds all of our routes that will be used to instantiate react-router:
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">var</span> <span class="nx">React</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;</span><span class="nx">react</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;);</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">Router</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;</span><span class="nx">react</span><span class="o">-</span><span class="nx">router</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;);</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">Route</span> <span class="o">=</span> <span class="nx">Router</span><span class="p">.</span><span class="nx">Route</span><span class="p">;</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">DefaultRoute</span> <span class="o">=</span> <span class="nx">Router</span><span class="p">.</span><span class="nx">DefaultRoute</span><span class="p">;</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span><span class="kd">var</span> <span class="nx">SmallApp</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;.</span><span class="o">/</span><span class="nx">components</span><span class="o">/</span><span class="nx">SmallApp</span><span class="p">.</span><span class="nx">react</span><span class="p">.</span><span class="nx">jsx</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;);</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">LoginPage</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;.</span><span class="o">/</span><span class="nx">components</span><span class="o">/</span><span class="nx">session</span><span class="o">/</span><span class="nx">LoginPage</span><span class="p">.</span><span class="nx">react</span><span class="p">.</span><span class="nx">jsx</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;);</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">StoriesPage</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;.</span><span class="o">/</span><span class="nx">components</span><span class="o">/</span><span class="nx">stories</span><span class="o">/</span><span class="nx">StoriesPage</span><span class="p">.</span><span class="nx">react</span><span class="p">.</span><span class="nx">jsx</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;);</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">StoryNew</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;.</span><span class="o">/</span><span class="nx">components</span><span class="o">/</span><span class="nx">stories</span><span class="o">/</span><span class="nx">StoryNew</span><span class="p">.</span><span class="nx">react</span><span class="p">.</span><span class="nx">jsx</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;);</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">SignupPage</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;.</span><span class="o">/</span><span class="nx">components</span><span class="o">/</span><span class="nx">session</span><span class="o">/</span><span class="nx">SignupPage</span><span class="p">.</span><span class="nx">react</span><span class="p">.</span><span class="nx">jsx</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;);</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span><span class="nx">module</span><span class="p">.</span><span class="nx">exports</span> <span class="o">=</span> <span class="p">(</span>
+</span><span class='line'>  <span class="o">&lt;</span><span class="nx">Route</span> <span class="nx">name</span><span class="o">=</span><span class="s2">&quot;app&quot;</span> <span class="nx">path</span><span class="o">=</span><span class="s2">&quot;/&quot;</span> <span class="nx">handler</span><span class="o">=</span><span class="p">{</span><span class="nx">SmallApp</span><span class="p">}</span><span class="o">&gt;</span>
+</span><span class='line'>    <span class="o">&lt;</span><span class="nx">DefaultRoute</span> <span class="nx">handler</span><span class="o">=</span><span class="p">{</span><span class="nx">StoriesPage</span><span class="p">}</span> <span class="o">/&gt;</span>
+</span><span class='line'>    <span class="o">&lt;</span><span class="nx">Route</span> <span class="nx">name</span><span class="o">=</span><span class="s2">&quot;login&quot;</span> <span class="nx">path</span><span class="o">=</span><span class="s2">&quot;/login&quot;</span> <span class="nx">handler</span><span class="o">=</span><span class="p">{</span><span class="nx">LoginPage</span><span class="p">}</span><span class="o">/&gt;</span>
+</span><span class='line'>    <span class="o">&lt;</span><span class="nx">Route</span> <span class="nx">name</span><span class="o">=</span><span class="s2">&quot;signup&quot;</span> <span class="nx">path</span><span class="o">=</span><span class="s2">&quot;/signup&quot;</span> <span class="nx">handler</span><span class="o">=</span><span class="p">{</span><span class="nx">SignupPage</span><span class="p">}</span><span class="o">/&gt;</span>
+</span><span class='line'>    <span class="o">&lt;</span><span class="nx">Route</span> <span class="nx">name</span><span class="o">=</span><span class="s2">&quot;stories&quot;</span> <span class="nx">path</span><span class="o">=</span><span class="s2">&quot;/stories&quot;</span> <span class="nx">handler</span><span class="o">=</span><span class="p">{</span><span class="nx">StoriesPage</span><span class="p">}</span><span class="o">&gt;</span>
+</span><span class='line'>      <span class="o">&lt;</span><span class="nx">Route</span> <span class="nx">name</span><span class="o">=</span><span class="s2">&quot;new-story&quot;</span> <span class="nx">path</span><span class="o">=</span><span class="s2">&quot;/stories/new&quot;</span> <span class="nx">handler</span><span class="o">=</span><span class="p">{</span><span class="nx">StoryNew</span><span class="p">}</span><span class="o">/&gt;</span>
+</span><span class='line'>    <span class="o">&lt;</span><span class="err">/Route&gt;</span>
+</span><span class='line'>  <span class="o">&lt;</span><span class="err">/Route&gt;</span>
+</span><span class='line'><span class="p">);</span>
+</span></code></pre></td></tr></table></div></figure>
+Routes are expressed in JSX syntax, we can specify a name (that will be used to perform transitions and to create links), an handler (the React component that will be mounted when the route is visited) and an optional path (that the user will see in his address bar). As you can see we can also mount routes inside another route in a RESTful way.</p>
+
+<h2>Dispatcher</h2>
+
+<p>The dispatcher is the core of the app really, it&rsquo;s the central hub for our messages (actions). It&rsquo;s also a failry easy component to implement, it&rsquo;s really just boilerplate code:
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">var</span> <span class="nx">SmallConstants</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;..</span><span class="o">/</span><span class="nx">constants</span><span class="o">/</span><span class="nx">SmallConstants</span><span class="p">.</span><span class="nx">js</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;);</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">Dispatcher</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;</span><span class="nx">flux</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;).</span><span class="nx">Dispatcher</span><span class="p">;</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">assign</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;</span><span class="nx">object</span><span class="o">-</span><span class="nx">assign</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;);</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span><span class="kd">var</span> <span class="nx">PayloadSources</span> <span class="o">=</span> <span class="nx">SmallConstants</span><span class="p">.</span><span class="nx">PayloadSources</span><span class="p">;</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span><span class="kd">var</span> <span class="nx">SmallAppDispatcher</span> <span class="o">=</span> <span class="nx">assign</span><span class="p">(</span><span class="k">new</span> <span class="nx">Dispatcher</span><span class="p">(),</span> <span class="p">{</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span>  <span class="nx">handleServerAction</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">action</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="kd">var</span> <span class="nx">payload</span> <span class="o">=</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nx">source</span><span class="o">:</span> <span class="nx">PayloadSources</span><span class="p">.</span><span class="nx">SERVER_ACTION</span><span class="p">,</span>
+</span><span class='line'>      <span class="nx">action</span><span class="o">:</span> <span class="nx">action</span>
+</span><span class='line'>    <span class="p">};</span>
+</span><span class='line'>    <span class="k">this</span><span class="p">.</span><span class="nx">dispatch</span><span class="p">(</span><span class="nx">payload</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">},</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span>  <span class="nx">handleViewAction</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">action</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="kd">var</span> <span class="nx">payload</span> <span class="o">=</span> <span class="p">{</span>
+</span><span class='line'>      <span class="nx">source</span><span class="o">:</span> <span class="nx">PayloadSources</span><span class="p">.</span><span class="nx">VIEW_ACTION</span><span class="p">,</span>
+</span><span class='line'>      <span class="nx">action</span><span class="o">:</span> <span class="nx">action</span>
+</span><span class='line'>    <span class="p">};</span>
+</span><span class='line'>    <span class="k">this</span><span class="p">.</span><span class="nx">dispatch</span><span class="p">(</span><span class="nx">payload</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'><span class="p">});</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span><span class="nx">module</span><span class="p">.</span><span class="nx">exports</span> <span class="o">=</span> <span class="nx">SmallAppDispatcher</span><span class="p">;</span>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">code</span><span class="o">&gt;</span>
+</span><span class='line'><span class="nx">We</span> <span class="nx">are</span> <span class="nx">basically</span> <span class="nx">defining</span> <span class="nx">two</span> <span class="nx">main</span> <span class="nx">methods</span> <span class="nx">that</span> <span class="nx">will</span> <span class="nx">be</span> <span class="nx">used</span> <span class="nx">to</span> <span class="nx">dispatch</span> <span class="nx">a</span> <span class="nx">message</span><span class="p">.</span> <span class="nx">We</span> <span class="nx">use</span> <span class="nx">two</span> <span class="nx">instead</span> <span class="nx">of</span> <span class="nx">one</span> <span class="nx">just</span> <span class="k">for</span> <span class="nx">semantics</span><span class="o">:</span> <span class="nx">one</span> <span class="nx">will</span> <span class="nx">handle</span> <span class="nx">the</span> <span class="nx">dispatch</span> <span class="nx">of</span> <span class="nx">server</span><span class="o">-</span><span class="nx">initiated</span> <span class="nx">action</span><span class="p">,</span> <span class="nx">the</span> <span class="nx">other</span> <span class="nx">one</span> <span class="nx">the</span> <span class="nx">view</span><span class="o">-</span><span class="nx">initiated</span> <span class="nx">actions</span><span class="p">.</span>
+</span><span class='line'><span class="nx">Beofre</span> <span class="nx">proceding</span> <span class="nx">to</span> <span class="nx">the</span> <span class="nx">meat</span> <span class="nx">of</span> <span class="nx">the</span> <span class="nx">implementation</span> <span class="nx">we</span><span class="err">&#39;</span><span class="nx">ll</span> <span class="nx">take</span> <span class="nx">a</span> <span class="nx">look</span> <span class="nx">at</span> <span class="nx">the</span> <span class="nx">Constants</span> <span class="nx">file</span><span class="o">:</span>
+</span><span class='line'><span class="o">&lt;</span><span class="err">/code&gt;javascript</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">keyMirror</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;</span><span class="nx">keymirror</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;);</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span><span class="kd">var</span> <span class="nx">APIRoot</span> <span class="o">=</span> <span class="o">&amp;</span><span class="nx">ldquo</span><span class="p">;</span><span class="o">&lt;</span><span class="nx">a</span> <span class="nx">href</span><span class="o">=</span><span class="s2">&quot;http://localhost:3000&quot;</span><span class="o">&gt;</span><span class="nx">http</span><span class="o">:</span><span class="c1">//localhost:3000&lt;/a&gt;&amp;rdquo;;&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span><span class="nx">module</span><span class="p">.</span><span class="nx">exports</span> <span class="o">=</span> <span class="p">{</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span>  <span class="nx">APIEndpoints</span><span class="o">:</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">LOGIN</span><span class="o">:</span>          <span class="nx">APIRoot</span> <span class="o">+</span> <span class="o">&amp;</span><span class="nx">ldquo</span><span class="p">;</span><span class="err">/v1/login&amp;rdquo;,</span>
+</span><span class='line'>    <span class="nx">REGISTRATION</span><span class="o">:</span>   <span class="nx">APIRoot</span> <span class="o">+</span> <span class="o">&amp;</span><span class="nx">ldquo</span><span class="p">;</span><span class="err">/v1/users&amp;rdquo;,</span>
+</span><span class='line'>    <span class="nx">STORIES</span><span class="o">:</span>        <span class="nx">APIRoot</span> <span class="o">+</span> <span class="o">&amp;</span><span class="nx">ldquo</span><span class="p">;</span><span class="err">/v1/stories&amp;rdquo;</span>
+</span><span class='line'>  <span class="p">},</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span>  <span class="nx">PayloadSources</span><span class="o">:</span> <span class="nx">keyMirror</span><span class="p">({</span>
+</span><span class='line'>    <span class="nx">SERVER_ACTION</span><span class="o">:</span> <span class="kc">null</span><span class="p">,</span>
+</span><span class='line'>    <span class="nx">VIEW_ACTION</span><span class="o">:</span> <span class="kc">null</span>
+</span><span class='line'>  <span class="p">}),</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span>  <span class="nx">ActionTypes</span><span class="o">:</span> <span class="nx">keyMirror</span><span class="p">({</span>
+</span><span class='line'>    <span class="c1">// Session</span>
+</span><span class='line'>    <span class="nx">LOGIN_REQUEST</span><span class="o">:</span> <span class="kc">null</span><span class="p">,</span>
+</span><span class='line'>    <span class="nx">LOGIN_RESPONSE</span><span class="o">:</span> <span class="kc">null</span><span class="p">,</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">pre</span><span class="o">&gt;&lt;</span><span class="nx">code</span><span class="o">&gt;</span><span class="c1">// Routes</span>
+</span><span class='line'><span class="nx">REDIRECT</span><span class="o">:</span> <span class="kc">null</span><span class="p">,</span>
+</span><span class='line'>
+</span><span class='line'><span class="nx">LOAD_STORIES</span><span class="o">:</span> <span class="kc">null</span><span class="p">,</span>
+</span><span class='line'><span class="nx">RECEIVE_STORIES</span><span class="o">:</span> <span class="kc">null</span><span class="p">,</span>
+</span><span class='line'><span class="nx">CREATE_STORY</span><span class="o">:</span> <span class="kc">null</span><span class="p">,</span>
+</span><span class='line'><span class="nx">RECEIVE_CREATED_STORY</span><span class="o">:</span> <span class="kc">null</span>
+</span><span class='line'><span class="o">&lt;</span><span class="err">/code&gt;&lt;/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span>  <span class="p">})</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span><span class="p">};</span>
+</span></code></pre></td></tr></table></div></figure>
+This is just an utility class that holds the constants that we&rsquo;ll use throughout the project, mainly the API endpoint and the types of action that we can perform in our app.
+Now, let&rsquo;s talk about the authentication process.</p>
+
+<h1>Authentication</h1>
+
+<p>As explained in the Flux example above, the data flow will be initiaded by the user, that will visit the login page, fill a form with his credentials and click on submit. We&rsquo;ll handle the submit as a <code>VIEW_ACTION</code>, this means that our view will just calla  method of our action creator for the session. Let&rsquo;s take a look at it:
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+<span class='line-number'>80</span>
+<span class='line-number'>81</span>
+<span class='line-number'>82</span>
+<span class='line-number'>83</span>
+<span class='line-number'>84</span>
+<span class='line-number'>85</span>
+<span class='line-number'>86</span>
+<span class='line-number'>87</span>
+<span class='line-number'>88</span>
+<span class='line-number'>89</span>
+<span class='line-number'>90</span>
+<span class='line-number'>91</span>
+<span class='line-number'>92</span>
+<span class='line-number'>93</span>
+<span class='line-number'>94</span>
+<span class='line-number'>95</span>
+<span class='line-number'>96</span>
+<span class='line-number'>97</span>
+<span class='line-number'>98</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="c1">// ./scripts/actions/SessionActionCreators.react.jsx</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">SmallAppDispatcher</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;..</span><span class="o">/</span><span class="nx">dispatcher</span><span class="o">/</span><span class="nx">SmallAppDispatcher</span><span class="p">.</span><span class="nx">js</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;);</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">SmallConstants</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;..</span><span class="o">/</span><span class="nx">constants</span><span class="o">/</span><span class="nx">SmallConstants</span><span class="p">.</span><span class="nx">js</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;);</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">WebAPIUtils</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;..</span><span class="o">/</span><span class="nx">utils</span><span class="o">/</span><span class="nx">WebAPIUtils</span><span class="p">.</span><span class="nx">js</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;);</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span><span class="kd">var</span> <span class="nx">ActionTypes</span> <span class="o">=</span> <span class="nx">SmallConstants</span><span class="p">.</span><span class="nx">ActionTypes</span><span class="p">;</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span><span class="nx">module</span><span class="p">.</span><span class="nx">exports</span> <span class="o">=</span> <span class="p">{</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span>  <span class="nx">signup</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">email</span><span class="p">,</span> <span class="nx">password</span><span class="p">,</span> <span class="nx">passwordConfirmation</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">SmallAppDispatcher</span><span class="p">.</span><span class="nx">handleViewAction</span><span class="p">({</span>
+</span><span class='line'>      <span class="nx">type</span><span class="o">:</span> <span class="nx">ActionTypes</span><span class="p">.</span><span class="nx">SIGNUP_REQUEST</span><span class="p">,</span>
+</span><span class='line'>      <span class="nx">email</span><span class="o">:</span> <span class="nx">email</span><span class="p">,</span>
+</span><span class='line'>      <span class="nx">password</span><span class="o">:</span> <span class="nx">password</span><span class="p">,</span>
+</span><span class='line'>      <span class="nx">passwordConfirmation</span><span class="o">:</span> <span class="nx">passwordConfirmation</span>
+</span><span class='line'>    <span class="p">});</span>
+</span><span class='line'>    <span class="nx">WebAPIUtils</span><span class="p">.</span><span class="nx">signup</span><span class="p">(</span><span class="nx">email</span><span class="p">,</span> <span class="nx">password</span><span class="p">,</span> <span class="nx">passwordConfirmation</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">},</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span>  <span class="nx">login</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">email</span><span class="p">,</span> <span class="nx">password</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">SmallAppDispatcher</span><span class="p">.</span><span class="nx">handleViewAction</span><span class="p">({</span>
+</span><span class='line'>      <span class="nx">type</span><span class="o">:</span> <span class="nx">ActionTypes</span><span class="p">.</span><span class="nx">LOGIN_REQUEST</span><span class="p">,</span>
+</span><span class='line'>      <span class="nx">email</span><span class="o">:</span> <span class="nx">email</span><span class="p">,</span>
+</span><span class='line'>      <span class="nx">password</span><span class="o">:</span> <span class="nx">password</span>
+</span><span class='line'>    <span class="p">});</span>
+</span><span class='line'>    <span class="nx">WebAPIUtils</span><span class="p">.</span><span class="nx">login</span><span class="p">(</span><span class="nx">email</span><span class="p">,</span> <span class="nx">password</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">},</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span>  <span class="nx">logout</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">SmallAppDispatcher</span><span class="p">.</span><span class="nx">handleViewAction</span><span class="p">({</span>
+</span><span class='line'>      <span class="nx">type</span><span class="o">:</span> <span class="nx">ActionTypes</span><span class="p">.</span><span class="nx">LOGOUT</span>
+</span><span class='line'>    <span class="p">});</span>
+</span><span class='line'>  <span class="p">}</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span><span class="p">};</span>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">code</span><span class="o">&gt;</span>
+</span><span class='line'><span class="nx">This</span> <span class="nx">cover</span> <span class="nx">all</span> <span class="nx">the</span> <span class="nx">user</span><span class="o">-</span><span class="nx">initiaded</span> <span class="nx">action</span> <span class="k">in</span> <span class="nx">the</span> <span class="nx">context</span> <span class="nx">of</span> <span class="nx">the</span> <span class="nx">session</span><span class="p">.</span> <span class="nx">The</span> <span class="nx">login</span> <span class="nx">action</span> <span class="nx">creator</span> <span class="nx">as</span> <span class="nx">you</span> <span class="nx">can</span> <span class="nx">see</span> <span class="nx">creates</span> <span class="nx">a</span> <span class="k">new</span> <span class="nx">ViewAction</span><span class="p">,</span> <span class="nx">attaching</span> <span class="nx">a</span> <span class="nx">payload</span> <span class="kd">with</span> <span class="nx">the</span> <span class="nx">user</span><span class="s1">&#39;s email and password, and then calls the WebAPIUtils.login method. If other components registered their interest in receiving the LOGIN_REQUEST action, the dispatcher would deliver this action right now.  </span>
+</span><span class='line'><span class="s1">The login method of our WebAPIUtils class is this:</span>
+</span><span class='line'><span class="s1">&lt;/code&gt;javascript</span>
+</span><span class='line'><span class="s1">var ServerActionCreators = require(&amp;lsquo;../actions/ServerActionCreators.react.jsx&amp;rsquo;);</span>
+</span><span class='line'><span class="s1">var request = require(&amp;lsquo;superagent&amp;rsquo;);&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="s1">&lt;p&gt;module.exports = {&lt;/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="s1">&lt;p&gt;  login: function(email, password) {</span>
+</span><span class='line'><span class="s1">    request.post(&amp;lsquo;&lt;a href=&quot;http://localhost:3002/v1/login&quot;&gt;http://localhost:3002/v1/login&lt;/a&gt;&amp;rsquo;)</span>
+</span><span class='line'><span class="s1">      .send({ username: email, password: password, grant_type: &amp;lsquo;password&amp;rsquo; })</span>
+</span><span class='line'><span class="s1">      .set(&amp;lsquo;Accept&amp;rsquo;, &amp;lsquo;application/json&amp;rsquo;)</span>
+</span><span class='line'><span class="s1">      .end(function(error, res){</span>
+</span><span class='line'><span class="s1">        if (res) {</span>
+</span><span class='line'><span class="s1">          if (res.error) {</span>
+</span><span class='line'><span class="s1">            var errorMsgs = _getErrors(res);</span>
+</span><span class='line'><span class="s1">            ServerActionCreators.receiveLogin(null, errorMsgs);</span>
+</span><span class='line'><span class="s1">          } else {</span>
+</span><span class='line'><span class="s1">            json = JSON.parse(res.text);</span>
+</span><span class='line'><span class="s1">            ServerActionCreators.receiveLogin(json, null);</span>
+</span><span class='line'><span class="s1">          }</span>
+</span><span class='line'><span class="s1">        }</span>
+</span><span class='line'><span class="s1">      });</span>
+</span><span class='line'><span class="s1">  },</span>
+</span><span class='line'><span class="s1">  // &amp;hellip;</span>
+</span><span class='line'><span class="s1">};</span>
+</span><span class='line'><span class="s1">&lt;code&gt;</span>
+</span><span class='line'><span class="s1">A common pattern should start to be apparent right now: no class is directly modifying the state of another, but they are just creating new actions. That&#39;</span><span class="nx">s</span> <span class="nx">the</span> <span class="nx">Flux</span> <span class="nx">way</span> <span class="nx">of</span> <span class="nx">handling</span> <span class="nx">data</span> <span class="k">in</span> <span class="nx">a</span> <span class="nx">nutshell</span><span class="p">.</span>
+</span><span class='line'><span class="nx">To</span> <span class="nx">keep</span> <span class="nx">things</span> <span class="nx">tidy</span> <span class="nx">the</span> <span class="nx">actions</span> <span class="k">for</span> <span class="nx">results</span> <span class="nx">of</span> <span class="nx">the</span> <span class="nx">login</span> <span class="nx">process</span> <span class="nx">are</span> <span class="nx">created</span> <span class="k">in</span> <span class="nx">a</span> <span class="nx">separate</span> <span class="nx">actionc</span> <span class="nx">reator</span><span class="o">:</span>
+</span><span class='line'><span class="o">&lt;</span><span class="err">/code&gt;javascript</span>
+</span><span class='line'><span class="c1">// ./scripts/actions/ServerActionCreators.react.jsx</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">SmallAppDispatcher</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;..</span><span class="o">/</span><span class="nx">dispatcher</span><span class="o">/</span><span class="nx">SmallAppDispatcher</span><span class="p">.</span><span class="nx">js</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;);</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">SmallConstants</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;..</span><span class="o">/</span><span class="nx">constants</span><span class="o">/</span><span class="nx">SmallConstants</span><span class="p">.</span><span class="nx">js</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;);</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span><span class="kd">var</span> <span class="nx">ActionTypes</span> <span class="o">=</span> <span class="nx">SmallConstants</span><span class="p">.</span><span class="nx">ActionTypes</span><span class="p">;</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span><span class="nx">module</span><span class="p">.</span><span class="nx">exports</span> <span class="o">=</span> <span class="p">{</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span>  <span class="nx">receiveLogin</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">json</span><span class="p">,</span> <span class="nx">errors</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">SmallAppDispatcher</span><span class="p">.</span><span class="nx">handleServerAction</span><span class="p">({</span>
+</span><span class='line'>      <span class="nx">type</span><span class="o">:</span> <span class="nx">ActionTypes</span><span class="p">.</span><span class="nx">LOGIN_RESPONSE</span><span class="p">,</span>
+</span><span class='line'>      <span class="nx">json</span><span class="o">:</span> <span class="nx">json</span><span class="p">,</span>
+</span><span class='line'>      <span class="nx">errors</span><span class="o">:</span> <span class="nx">errors</span>
+</span><span class='line'>    <span class="p">});</span>
+</span><span class='line'>  <span class="p">},</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span>  <span class="nx">receiveStories</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">json</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">SmallAppDispatcher</span><span class="p">.</span><span class="nx">handleServerAction</span><span class="p">({</span>
+</span><span class='line'>      <span class="nx">type</span><span class="o">:</span> <span class="nx">ActionTypes</span><span class="p">.</span><span class="nx">RECEIVE_STORIES</span><span class="p">,</span>
+</span><span class='line'>      <span class="nx">json</span><span class="o">:</span> <span class="nx">json</span>
+</span><span class='line'>    <span class="p">});</span>
+</span><span class='line'>  <span class="p">},</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span>  <span class="nx">receiveCreatedStory</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">json</span><span class="p">,</span> <span class="nx">errors</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">SmallAppDispatcher</span><span class="p">.</span><span class="nx">handleServerAction</span><span class="p">({</span>
+</span><span class='line'>      <span class="nx">type</span><span class="o">:</span> <span class="nx">ActionTypes</span><span class="p">.</span><span class="nx">RECEIVE_CREATED_STORY</span><span class="p">,</span>
+</span><span class='line'>      <span class="nx">json</span><span class="o">:</span> <span class="nx">json</span><span class="p">,</span>
+</span><span class='line'>      <span class="nx">errors</span><span class="o">:</span> <span class="nx">errors</span>
+</span><span class='line'>    <span class="p">});</span>
+</span><span class='line'>  <span class="p">}</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span><span class="p">};</span>
+</span></code></pre></td></tr></table></div></figure>
+And this covers the server and view actions for the login process. Who handles the result though? Let&rsquo;s talk about stores.</p>
+
+<h2>Sessionstore</h2>
+
+<p>Stores are like a mix between a model and a controller, they handle the data, the mains tate of the application, feeding the records to the views, while retrieving the data from a server. We are about to see the SessionStore, which keeps track of the current user (and holds his access token, used in the API calls) and listens for the LOGIN_RESPONSE action.
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+<span class='line-number'>80</span>
+<span class='line-number'>81</span>
+<span class='line-number'>82</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="kd">var</span> <span class="nx">SmallAppDispatcher</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;..</span><span class="o">/</span><span class="nx">dispatcher</span><span class="o">/</span><span class="nx">SmallAppDispatcher</span><span class="p">.</span><span class="nx">js</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;);</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">SmallConstants</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;..</span><span class="o">/</span><span class="nx">constants</span><span class="o">/</span><span class="nx">SmallConstants</span><span class="p">.</span><span class="nx">js</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;);</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">EventEmitter</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;</span><span class="nx">events</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;).</span><span class="nx">EventEmitter</span><span class="p">;</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">assign</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;</span><span class="nx">object</span><span class="o">-</span><span class="nx">assign</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;);</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span><span class="kd">var</span> <span class="nx">ActionTypes</span> <span class="o">=</span> <span class="nx">SmallConstants</span><span class="p">.</span><span class="nx">ActionTypes</span><span class="p">;</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">CHANGE_EVENT</span> <span class="o">=</span> <span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;</span><span class="nx">change</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;;</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span><span class="c1">// Load an access token from the session storage, you might want to implement</span>
+</span><span class='line'><span class="c1">// a &amp;lsquo;remember me&amp;rsquo; using localSgorage</span>
+</span><span class='line'><span class="kd">var</span> <span class="o">&lt;</span><span class="nx">em</span><span class="o">&gt;</span><span class="nx">accessToken</span> <span class="o">=</span> <span class="nx">sessionStorage</span><span class="p">.</span><span class="nx">getItem</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;</span><span class="nx">accessToken</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;)</span>
+</span><span class='line'><span class="kd">var</span> <span class="o">&lt;</span><span class="err">/em&gt;email = sessionStorage.getItem(&amp;lsquo;email&amp;rsquo;)</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">_errors</span> <span class="o">=</span> <span class="p">[];</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span><span class="kd">var</span> <span class="nx">SessionStore</span> <span class="o">=</span> <span class="nx">assign</span><span class="p">({},</span> <span class="nx">EventEmitter</span><span class="p">.</span><span class="nx">prototype</span><span class="p">,</span> <span class="p">{</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span>  <span class="nx">emitChange</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">this</span><span class="p">.</span><span class="nx">emit</span><span class="p">(</span><span class="nx">CHANGE_EVENT</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">},</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span>  <span class="nx">addChangeListener</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">callback</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">this</span><span class="p">.</span><span class="nx">on</span><span class="p">(</span><span class="nx">CHANGE_EVENT</span><span class="p">,</span> <span class="nx">callback</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">},</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span>  <span class="nx">removeChangeListener</span><span class="o">:</span> <span class="kd">function</span><span class="p">(</span><span class="nx">callback</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">this</span><span class="p">.</span><span class="nx">removeListener</span><span class="p">(</span><span class="nx">CHANGE_EVENT</span><span class="p">,</span> <span class="nx">callback</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">},</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span>  <span class="nx">isLoggedIn</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="nx">_accessToken</span> <span class="o">?</span> <span class="kc">true</span> <span class="o">:</span> <span class="kc">false</span><span class="p">;</span>  <span class="o">&lt;</span><span class="nx">br</span><span class="o">/&gt;</span>
+</span><span class='line'>  <span class="p">},</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span>  <span class="nx">getAccessToken</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="nx">_accessToken</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">},</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span>  <span class="nx">getEmail</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="nx">_email</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">},</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span>  <span class="nx">getErrors</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="nx">_errors</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span><span class="p">});</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span><span class="nx">SessionStore</span><span class="p">.</span><span class="nx">dispatchToken</span> <span class="o">=</span> <span class="nx">SmallAppDispatcher</span><span class="p">.</span><span class="nx">register</span><span class="p">(</span><span class="kd">function</span><span class="p">(</span><span class="nx">payload</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>  <span class="kd">var</span> <span class="nx">action</span> <span class="o">=</span> <span class="nx">payload</span><span class="p">.</span><span class="nx">action</span><span class="p">;</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span>  <span class="k">switch</span><span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="nx">type</span><span class="p">)</span> <span class="p">{</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">pre</span><span class="o">&gt;&lt;</span><span class="nx">code</span><span class="o">&gt;</span><span class="k">case</span> <span class="nx">ActionTypes</span><span class="p">.</span><span class="nx">LOGIN_RESPONSE</span><span class="o">:</span>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="nx">json</span> <span class="o">&amp;</span><span class="nx">amp</span><span class="p">;</span><span class="o">&amp;</span><span class="nx">amp</span><span class="p">;</span> <span class="nx">action</span><span class="p">.</span><span class="nx">json</span><span class="p">.</span><span class="nx">access_token</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">_accessToken</span> <span class="o">=</span> <span class="nx">action</span><span class="p">.</span><span class="nx">json</span><span class="p">.</span><span class="nx">access_token</span><span class="p">;</span>
+</span><span class='line'>    <span class="nx">_email</span> <span class="o">=</span> <span class="nx">action</span><span class="p">.</span><span class="nx">json</span><span class="p">.</span><span class="nx">email</span><span class="p">;</span>
+</span><span class='line'>    <span class="c1">// Token will always live in the session, so that the API can grab it with no hassle</span>
+</span><span class='line'>    <span class="nx">sessionStorage</span><span class="p">.</span><span class="nx">setItem</span><span class="p">(</span><span class="s1">&#39;accessToken&#39;</span><span class="p">,</span> <span class="nx">_accessToken</span><span class="p">);</span>
+</span><span class='line'>    <span class="nx">sessionStorage</span><span class="p">.</span><span class="nx">setItem</span><span class="p">(</span><span class="s1">&#39;email&#39;</span><span class="p">,</span> <span class="nx">_email</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="k">if</span> <span class="p">(</span><span class="nx">action</span><span class="p">.</span><span class="nx">errors</span><span class="p">)</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">_errors</span> <span class="o">=</span> <span class="nx">action</span><span class="p">.</span><span class="nx">errors</span><span class="p">;</span>
+</span><span class='line'>  <span class="p">}</span>
+</span><span class='line'>  <span class="nx">SessionStore</span><span class="p">.</span><span class="nx">emitChange</span><span class="p">();</span>
+</span><span class='line'>  <span class="k">break</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">case</span> <span class="nx">ActionTypes</span><span class="p">.</span><span class="nx">LOGOUT</span><span class="o">:</span>
+</span><span class='line'>  <span class="nx">_accessToken</span> <span class="o">=</span> <span class="kc">null</span><span class="p">;</span>
+</span><span class='line'>  <span class="nx">_email</span> <span class="o">=</span> <span class="kc">null</span><span class="p">;</span>
+</span><span class='line'>  <span class="nx">sessionStorage</span><span class="p">.</span><span class="nx">removeItem</span><span class="p">(</span><span class="s1">&#39;accessToken&#39;</span><span class="p">);</span>
+</span><span class='line'>  <span class="nx">sessionStorage</span><span class="p">.</span><span class="nx">removeItem</span><span class="p">(</span><span class="s1">&#39;email&#39;</span><span class="p">);</span>
+</span><span class='line'>  <span class="nx">SessionStore</span><span class="p">.</span><span class="nx">emitChange</span><span class="p">();</span>
+</span><span class='line'>  <span class="k">break</span><span class="p">;</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">default</span><span class="o">:</span>
+</span><span class='line'><span class="o">&lt;</span><span class="err">/code&gt;&lt;/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span>  <span class="p">}</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span>  <span class="k">return</span> <span class="kc">true</span><span class="p">;</span>
+</span><span class='line'><span class="p">});</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span><span class="nx">module</span><span class="p">.</span><span class="nx">exports</span> <span class="o">=</span> <span class="nx">SessionStore</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure>
+That looks like a bunch of code, but most of it is boilerplate, the interesting part is in the .register function. When the store receives the LOGIN_RESPONSE action unpacks the payload and checks wether the login was successfull or not. It then updates its state (that will be accessed by the public properties declared on top of the file) and notifies a change to whomever might be listening (that&rsquo;s why we import node&rsquo;s EventEmitter and merge the class with it).<br/>
+Ok, we have the ability to send a view action, we receive the result and store it, cool, now we need to use this store somewhere and show some UI already.</p>
+
+<h2>Application</h2>
+
+<p>Having a store and a state brings up a tricky question: who should listen to its changes and who should use its state? Following the React philosophy we should find the component at the topmost of our view&rsquo;s tree, without bloating the component itself though. As far as session goes I think the best place is the root of our app. The root is the first component that is mounted by the routes, and if you take a look at our routes, that would be SmallApp:
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+</pre></td><td class='code'><pre><code class='javascript'><span class='line'><span class="c1">// ./scripts/components/SmallApp.react.jsx</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">React</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;</span><span class="nx">react</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;);</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">RouteHandler</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;</span><span class="nx">react</span><span class="o">-</span><span class="nx">router</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;).</span><span class="nx">RouteHandler</span><span class="p">;</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">Header</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;..</span><span class="o">/</span><span class="nx">components</span><span class="o">/</span><span class="nx">Header</span><span class="p">.</span><span class="nx">react</span><span class="p">.</span><span class="nx">jsx</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;);</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">SessionStore</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;..</span><span class="o">/</span><span class="nx">stores</span><span class="o">/</span><span class="nx">SessionStore</span><span class="p">.</span><span class="nx">react</span><span class="p">.</span><span class="nx">jsx</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;);</span>
+</span><span class='line'><span class="kd">var</span> <span class="nx">RouteStore</span> <span class="o">=</span> <span class="nx">require</span><span class="p">(</span><span class="o">&amp;</span><span class="nx">lsquo</span><span class="p">;..</span><span class="o">/</span><span class="nx">stores</span><span class="o">/</span><span class="nx">RouteStore</span><span class="p">.</span><span class="nx">react</span><span class="p">.</span><span class="nx">jsx</span><span class="o">&amp;</span><span class="nx">rsquo</span><span class="p">;);</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span><span class="kd">function</span> <span class="nx">getStateFromStores</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>  <span class="k">return</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">isLoggedIn</span><span class="o">:</span> <span class="nx">SessionStore</span><span class="p">.</span><span class="nx">isLoggedIn</span><span class="p">(),</span>
+</span><span class='line'>    <span class="nx">email</span><span class="o">:</span> <span class="nx">SessionStore</span><span class="p">.</span><span class="nx">getEmail</span><span class="p">()</span>
+</span><span class='line'>  <span class="p">};</span>
+</span><span class='line'><span class="p">}</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span><span class="kd">var</span> <span class="nx">SmallApp</span> <span class="o">=</span> <span class="nx">React</span><span class="p">.</span><span class="nx">createClass</span><span class="p">({</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span>  <span class="nx">getInitialState</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="nx">getStateFromStores</span><span class="p">();</span>
+</span><span class='line'>  <span class="p">},</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span>  <span class="nx">componentDidMount</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">SessionStore</span><span class="p">.</span><span class="nx">addChangeListener</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">_onChange</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">},</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span>  <span class="nx">componentWillUnmount</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="nx">SessionStore</span><span class="p">.</span><span class="nx">removeChangeListener</span><span class="p">(</span><span class="k">this</span><span class="p">.</span><span class="nx">_onChange</span><span class="p">);</span>
+</span><span class='line'>  <span class="p">},</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span>  <span class="nx">_onChange</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">this</span><span class="p">.</span><span class="nx">setState</span><span class="p">(</span><span class="nx">getStateFromStores</span><span class="p">());</span>
+</span><span class='line'>  <span class="p">},</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span>  <span class="nx">render</span><span class="o">:</span> <span class="kd">function</span><span class="p">()</span> <span class="p">{</span>
+</span><span class='line'>    <span class="k">return</span> <span class="p">(</span>
+</span><span class='line'>      <span class="o">&lt;</span><span class="nx">div</span> <span class="nx">className</span><span class="o">=</span><span class="s2">&quot;app&quot;</span><span class="o">&gt;</span>
+</span><span class='line'>        <span class="o">&lt;</span><span class="nx">Header</span>
+</span><span class='line'>          <span class="nx">isLoggedIn</span><span class="o">=</span><span class="p">{</span><span class="k">this</span><span class="p">.</span><span class="nx">state</span><span class="p">.</span><span class="nx">isLoggedIn</span><span class="p">}</span>
+</span><span class='line'>          <span class="nx">email</span><span class="o">=</span><span class="p">{</span><span class="k">this</span><span class="p">.</span><span class="nx">state</span><span class="p">.</span><span class="nx">email</span><span class="p">}</span> <span class="o">/&gt;</span>
+</span><span class='line'>        <span class="o">&lt;</span><span class="nx">RouteHandler</span><span class="o">/&gt;</span>
+</span><span class='line'>      <span class="o">&lt;</span><span class="err">/div&gt;</span>
+</span><span class='line'>    <span class="p">);</span>
+</span><span class='line'>  <span class="p">}</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span><span class="p">});</span><span class="o">&lt;</span><span class="err">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nx">p</span><span class="o">&gt;</span><span class="nx">module</span><span class="p">.</span><span class="nx">exports</span> <span class="o">=</span> <span class="nx">SmallApp</span><span class="p">;</span>
+</span></code></pre></td></tr></table></div></figure>
+This is a really simple component that serves as the root layout. If you take a look at the render function you can see that it only renders a React component named Header and then mounts the content of the Router. The header has a couple of properties though (React props to be exact) and we fill them using the SmallApp state. Those props will be accessible from the Header component. The  SmallApp state is obtained by querying the SessionStore.</p>
+
+<h2>LoginPage</h2>
+
+<h2>RegisterPage</h2>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[React + Flux backed by Rails API - Part 1]]></title>
+    <link href="http://fancypixel.github.io/blog/2015/01/28/react-plus-flux-backed-by-rails-api/"/>
+    <updated>2015-01-28T16:04:00+01:00</updated>
+    <id>http://fancypixel.github.io/blog/2015/01/28/react-plus-flux-backed-by-rails-api</id>
+    <content type="html"><![CDATA[<p>I&rsquo;ve been working on a frontend for a project we are developing over at Fancy Pixel. We are embracing what looks like a good habit: slicing the monolithic Rails app in a backend serving APIs and a frontend consuming them. We did this in the not so distant past using Angular.js. It was all fine and dandy, until it wasn&rsquo;t. There&rsquo;s something about it that doesn&rsquo;t sit right with me, I wouldn&rsquo;t go in detail, since many others already did, but let&rsquo;s just say that there&rsquo;s too much magic involved for my tastes (says the guy using Rails). I can&rsquo;t deny that the major structural changes introduced in 2.0 were the last nail in the coffin. I wanted to try something new, something that would enforce a solid architecture of my app, letting me control the single parts. React got a lot of good press in the past months, so I took the chance to dive in. Here you&rsquo;ll find pretty much everything I learned by writing a frontend using React, with a vanilla Flux architecture, consuming an API written in Rails.</p>
+
+<!-- More -->
+
+
+<h2>Choosing the backend</h2>
+
+<p>Given our experience, the obvious choice for us was Rails, but with a twist: rails-api. Rails-api is a stripped down version of Rails, where most of the &lsquo;useless&rsquo; middleware is not included (but you can iclude it if you need it). Using Rails to serve JSON might seem overkill, but the Github page of rails-api has some really good points to counter this argument.</p>
+
+<h2>The frontend technology</h2>
+
+<p>The real meat of this post, I picked React for building the views. React is javascript library for building user interfaces built and open sourced by the Facebook&rsquo;s engineers. Its major selling point is the ability to provide a dynamic and fast way to build isomorphic apps. Isomorphic means that the app can be rendered with ease on both the server and the client, which helps with SEO. I&rsquo;ll be honest, I don&rsquo;t give a flying f&hellip; udge about SEO, I was sold by the Virtual DOM and how the data is organized and handled in React views.
+The Virtual DOM is something that we&rsquo;re going to see implemented in other JS frameworks (Ember does that already if I&rsquo;m not mistaken). The views can be rendered on the server for the initial request, than the underliyng tech is going to render subsequent pages in a Virtual DOM, that is then diffed with the actual DOM, and then only the differences are changes in the visible page. And it&rsquo;s fast. Brilliant.</p>
+
+<h2>Flux</h2>
+
+<p>This covers the backend and the views, we&rsquo;re missing something in between, say, an architecture to follow. Flux is an architecture for building web UIs, and works really well in compination with React, but it can really be applied anywhere.</p>
+
+<h2>Here comes trouble</h2>
+
+<p>I never was a big fan of implementing web UI, CSS always gets messy, Javascript files become scary monoliths where crappy code goes to die, while developers test their spelunker skills and loose their sanity. Maybe I&rsquo;m just crap, but even using Sass anc Coffee/Typescript never really solved my issues. I was excited to try something really new, little did I know that using bleeding edge tech is a pain in the butt. Ok, I DID now that, but I was naive enough to think that maybe this time everything was going to be different.
+The PITA was learning and being productive. It took a while, there&rsquo;s still not a clear &ldquo;best practice&rdquo; to perform common tasks, nor a clear starting configuration. Let&rsquo;s put it that way, if you come from the RoR world, where convention over configuration greatly reduced boilerplating and &ldquo;forced&rdquo; you to follow commonly established best practice, you&rsquo;re going to struggle with Flux. Hey, I figured it out, so it&rsquo;s not that big of a deal.</p>
+
+<h1>Getting it all toghether</h1>
+
+<p>Let&rsquo;s start writing some code. We&rsquo;ll go through a simple Rails app, it will feature user signup and login, and the ability to post a story. Just like Medium, but in a smaller size. Let&rsquo;s call it Small. Feel free to skip the Railsy part if you&rsquo;re only interested in Flux and React.</p>
+
+<h1>Rails API</h1>
+
+<p>A while ago I stumbled upon <a href="http://slides.com/alanpeabody/breaking-up-with-the-asset-pipeline#/">this article</a> by Alan Peabody. I had a similar experience as him, as the title say, I too feel the need to break up with Rails&#8217; asset pipeline and make Rails beautiful again. We&rsquo;ll be using the rails-api gem. You can generate a new app with its CLI command, or you can integrate it later. I&rsquo;ll do the later option, no reason really, just a habit.
+<code>
+rails new small
+</code>
+Next we&rsquo;ll add rails-api, devise, active model serializers gems to our gemfile, and while we are at it we can remove all the gems that generate assets or view content, jbuilder included. Our Gemfile should look like this (test section omitted):
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="n">source</span> <span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="o">&lt;</span><span class="n">a</span> <span class="n">href</span><span class="o">=</span><span class="s2">&quot;https://rubygems.org&quot;</span><span class="o">&gt;</span><span class="ss">https</span><span class="p">:</span><span class="sr">//</span><span class="n">rubygems</span><span class="o">.</span><span class="n">org</span><span class="o">&lt;</span><span class="sr">/a&gt;&amp;rsquo;&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span><span class="n">gem</span> <span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="n">rails</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;,</span> <span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="mi">4</span><span class="o">.</span><span class="mi">2</span><span class="o">.</span><span class="mi">0</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;</span>
+</span><span class='line'><span class="n">gem</span> <span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="n">rails</span><span class="o">-</span><span class="n">api</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;,</span> <span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="o">~&gt;</span> <span class="mi">0</span><span class="o">.</span><span class="mi">4</span><span class="o">.</span><span class="mi">0</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;</span>
+</span><span class='line'><span class="n">gem</span> <span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="n">active_model_serializers</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;,</span> <span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="o">~&gt;</span> <span class="mi">0</span><span class="o">.</span><span class="mi">8</span><span class="o">.</span><span class="mi">3</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;</span> <span class="c1"># NOTE: not the 0.9</span>
+</span><span class='line'><span class="n">gem</span> <span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="n">devise</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;,</span> <span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="o">~&gt;</span> <span class="mi">3</span><span class="o">.</span><span class="mi">4</span><span class="o">.</span><span class="mi">1</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;</span>
+</span><span class='line'><span class="n">gem</span> <span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="n">sqlite3</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;</span>
+</span><span class='line'><span class="n">gem</span> <span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="n">sdoc</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;,</span> <span class="o">&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="o">~&gt;</span> <span class="mi">0</span><span class="o">.</span><span class="mi">4</span><span class="o">.</span><span class="mi">0</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;,</span> <span class="ss">group</span><span class="p">:</span> <span class="ss">:doc</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;group :development, :test do</span>
+</span><span class='line'><span class="sr">  gem &amp;lsquo;byebug&amp;rsquo;</span>
+</span><span class='line'><span class="sr">  gem &amp;lsquo;web-console&amp;rsquo;, &amp;lsquo;~&gt; 2.0&amp;rsquo;</span>
+</span><span class='line'><span class="sr">  gem &amp;lsquo;spring&amp;rsquo;</span>
+</span><span class='line'><span class="sr">end</span>
+</span><span class='line'><span class="sr">&lt;code&gt;</span>
+</span><span class='line'><span class="sr">Now we need to change the application controller so that it inherits from ActionController::API, and kiss the protect_From_forgery goodbye. Since we are serving only JSON, it makes sense to add</span>
+</span><span class='line'><span class="sr">&lt;/</span><span class="n">code</span><span class="o">&gt;</span><span class="n">ruby</span>
+</span><span class='line'><span class="n">respond_to</span> <span class="ss">:json</span>
+</span></code></pre></td></tr></table></div></figure>
+to the applciation controller, helps DRYing all out.</p>
+
+<h2>Authentication</h2>
+
+<p>Should I first define a resurce? Maybe, but that&rsquo;s trivial, let&rsquo;s get the authentication out of the way. We are building an API, so no session will be involved, we have to authenticate the user in each request. I&rsquo;ll be using <a href="http://oauthlib.readthedocs.org/en/latest/oauth2/grants/password.html">Oauth2 Resource Owner Password Credentials Grant</a> which sounds fancy, but it&rsquo;s really just a token in the request header that authenticates the caller. The gem Devise used to implement a token_authenticatable strategy, but it was pulled for security reason. There are gems that implement the strategy (like Doorkeeper), but since it&rsquo;s fairly easy to implement I&rsquo;ll do it for myself. Let&rsquo;s install Devise first by adding it in the Gemfile and launching <code>rails generate devise:install</code> after a <code>bundle install</code>, then we create the user model:
+<code>ruby
+rails generate devise User
+</code></p>
+
+<h2>Token authentication</h2>
+
+<p>Token authentication was removed from Devise a couple of years ago, <a href="http://blog.plataformatec.com.br/2013/08/devise-3-1-now-with-more-secure-defaults/">this link</a> explains why. We have to implement it for ourselves, but it&rsquo;s quite easy. The token will be composed of two information: the user&rsquo;s id followed by the token itself, separated by a <code>:</code>. We&rsquo;ll be using the user&rsquo;s database id for this sample, for semplicity&rsquo;s sake, but it&rsquo;s obviously not a smart thing to do.
+First things first, we&rsquo;ll add an access_token to the user:
+<code>ruby
+class AddAccessTokenToUser &lt; ActiveRecord::Migration
+  def change
+    add_column :users, :access_token, :string
+  end
+end
+</code>
+and here&rsquo;s the User model:
+<figure class='code'><figcaption><span></span></figcaption><div class="highlight"><table><tr><td class="gutter"><pre class="line-numbers"><span class='line-number'>1</span>
+<span class='line-number'>2</span>
+<span class='line-number'>3</span>
+<span class='line-number'>4</span>
+<span class='line-number'>5</span>
+<span class='line-number'>6</span>
+<span class='line-number'>7</span>
+<span class='line-number'>8</span>
+<span class='line-number'>9</span>
+<span class='line-number'>10</span>
+<span class='line-number'>11</span>
+<span class='line-number'>12</span>
+<span class='line-number'>13</span>
+<span class='line-number'>14</span>
+<span class='line-number'>15</span>
+<span class='line-number'>16</span>
+<span class='line-number'>17</span>
+<span class='line-number'>18</span>
+<span class='line-number'>19</span>
+<span class='line-number'>20</span>
+<span class='line-number'>21</span>
+<span class='line-number'>22</span>
+<span class='line-number'>23</span>
+<span class='line-number'>24</span>
+<span class='line-number'>25</span>
+<span class='line-number'>26</span>
+<span class='line-number'>27</span>
+<span class='line-number'>28</span>
+<span class='line-number'>29</span>
+<span class='line-number'>30</span>
+<span class='line-number'>31</span>
+<span class='line-number'>32</span>
+<span class='line-number'>33</span>
+<span class='line-number'>34</span>
+<span class='line-number'>35</span>
+<span class='line-number'>36</span>
+<span class='line-number'>37</span>
+<span class='line-number'>38</span>
+<span class='line-number'>39</span>
+<span class='line-number'>40</span>
+<span class='line-number'>41</span>
+<span class='line-number'>42</span>
+<span class='line-number'>43</span>
+<span class='line-number'>44</span>
+<span class='line-number'>45</span>
+<span class='line-number'>46</span>
+<span class='line-number'>47</span>
+<span class='line-number'>48</span>
+<span class='line-number'>49</span>
+<span class='line-number'>50</span>
+<span class='line-number'>51</span>
+<span class='line-number'>52</span>
+<span class='line-number'>53</span>
+<span class='line-number'>54</span>
+<span class='line-number'>55</span>
+<span class='line-number'>56</span>
+<span class='line-number'>57</span>
+<span class='line-number'>58</span>
+<span class='line-number'>59</span>
+<span class='line-number'>60</span>
+<span class='line-number'>61</span>
+<span class='line-number'>62</span>
+<span class='line-number'>63</span>
+<span class='line-number'>64</span>
+<span class='line-number'>65</span>
+<span class='line-number'>66</span>
+<span class='line-number'>67</span>
+<span class='line-number'>68</span>
+<span class='line-number'>69</span>
+<span class='line-number'>70</span>
+<span class='line-number'>71</span>
+<span class='line-number'>72</span>
+<span class='line-number'>73</span>
+<span class='line-number'>74</span>
+<span class='line-number'>75</span>
+<span class='line-number'>76</span>
+<span class='line-number'>77</span>
+<span class='line-number'>78</span>
+<span class='line-number'>79</span>
+<span class='line-number'>80</span>
+<span class='line-number'>81</span>
+<span class='line-number'>82</span>
+<span class='line-number'>83</span>
+<span class='line-number'>84</span>
+<span class='line-number'>85</span>
+<span class='line-number'>86</span>
+<span class='line-number'>87</span>
+<span class='line-number'>88</span>
+<span class='line-number'>89</span>
+<span class='line-number'>90</span>
+<span class='line-number'>91</span>
+<span class='line-number'>92</span>
+<span class='line-number'>93</span>
+<span class='line-number'>94</span>
+<span class='line-number'>95</span>
+<span class='line-number'>96</span>
+<span class='line-number'>97</span>
+<span class='line-number'>98</span>
+<span class='line-number'>99</span>
+<span class='line-number'>100</span>
+<span class='line-number'>101</span>
+<span class='line-number'>102</span>
+<span class='line-number'>103</span>
+<span class='line-number'>104</span>
+<span class='line-number'>105</span>
+<span class='line-number'>106</span>
+<span class='line-number'>107</span>
+<span class='line-number'>108</span>
+<span class='line-number'>109</span>
+<span class='line-number'>110</span>
+<span class='line-number'>111</span>
+<span class='line-number'>112</span>
+<span class='line-number'>113</span>
+<span class='line-number'>114</span>
+<span class='line-number'>115</span>
+<span class='line-number'>116</span>
+<span class='line-number'>117</span>
+<span class='line-number'>118</span>
+<span class='line-number'>119</span>
+<span class='line-number'>120</span>
+<span class='line-number'>121</span>
+<span class='line-number'>122</span>
+<span class='line-number'>123</span>
+<span class='line-number'>124</span>
+<span class='line-number'>125</span>
+<span class='line-number'>126</span>
+<span class='line-number'>127</span>
+<span class='line-number'>128</span>
+<span class='line-number'>129</span>
+<span class='line-number'>130</span>
+<span class='line-number'>131</span>
+<span class='line-number'>132</span>
+<span class='line-number'>133</span>
+<span class='line-number'>134</span>
+<span class='line-number'>135</span>
+<span class='line-number'>136</span>
+<span class='line-number'>137</span>
+<span class='line-number'>138</span>
+<span class='line-number'>139</span>
+<span class='line-number'>140</span>
+<span class='line-number'>141</span>
+<span class='line-number'>142</span>
+<span class='line-number'>143</span>
+<span class='line-number'>144</span>
+<span class='line-number'>145</span>
+<span class='line-number'>146</span>
+<span class='line-number'>147</span>
+</pre></td><td class='code'><pre><code class='ruby'><span class='line'><span class="k">class</span> <span class="nc">User</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="no">ActiveRecord</span><span class="o">::</span><span class="no">Base</span>
+</span><span class='line'>  <span class="n">devise</span> <span class="ss">:database_authenticatable</span><span class="p">,</span> <span class="ss">:recoverable</span><span class="p">,</span> <span class="ss">:validatable</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;  after_create :update_access_token!&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="kp">private</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;  def update_access_token!</span>
+</span><span class='line'><span class="sr">    self.access_token = generate_access_token</span>
+</span><span class='line'><span class="sr">    save</span>
+</span><span class='line'><span class="sr">  end&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="k">def</span> <span class="nf">generate_access_token</span>
+</span><span class='line'>    <span class="kp">loop</span> <span class="k">do</span>
+</span><span class='line'>      <span class="n">token</span> <span class="o">=</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="c1">#{self.id}:#{Devise.friendly_token}&amp;rdquo;</span>
+</span><span class='line'>      <span class="k">break</span> <span class="n">token</span> <span class="k">unless</span> <span class="no">User</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="ss">access_token</span><span class="p">:</span> <span class="n">token</span><span class="p">)</span><span class="o">.</span><span class="n">first</span>
+</span><span class='line'>    <span class="k">end</span>
+</span><span class='line'>  <span class="k">end</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;end</span>
+</span><span class='line'><span class="sr">&lt;code&gt;</span>
+</span><span class='line'><span class="sr">The user authentication will sit in the application controller:</span>
+</span><span class='line'><span class="sr">&lt;/</span><span class="n">code</span><span class="o">&gt;</span><span class="n">ruby</span>
+</span><span class='line'><span class="k">class</span> <span class="nc">ApplicationController</span> <span class="o">&amp;</span><span class="n">lt</span><span class="p">;</span> <span class="no">ActionController</span><span class="o">::</span><span class="no">API</span>
+</span><span class='line'>  <span class="n">before_action</span> <span class="ss">:authenticate_user_from_token!</span>
+</span><span class='line'>  <span class="kp">include</span> <span class="no">AbstractController</span><span class="o">::</span><span class="no">Translation</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;  respond_to :json&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="c1">##</span>
+</span><span class='line'>  <span class="c1"># User Authentication</span>
+</span><span class='line'>  <span class="c1"># Authenticates the user with OAuth2 Resource Owner Password Credentials Grant</span>
+</span><span class='line'>  <span class="k">def</span> <span class="nf">authenticate_user_from_token!</span>
+</span><span class='line'>    <span class="n">auth_token</span> <span class="o">=</span> <span class="n">request</span><span class="o">.</span><span class="n">headers</span><span class="o">[&amp;</span><span class="n">lsquo</span><span class="p">;</span><span class="no">Authorization</span><span class="o">&amp;</span><span class="n">rsquo</span><span class="p">;</span><span class="o">]&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;pre&gt;&lt;code&gt;if auth_token</span>
+</span><span class='line'><span class="sr">  authenticate_with_auth_token auth_token</span>
+</span><span class='line'><span class="sr">else</span>
+</span><span class='line'><span class="sr">  authentication_error</span>
+</span><span class='line'><span class="sr">end</span>
+</span><span class='line'><span class="sr">&lt;/</span><span class="n">code</span><span class="o">&gt;&lt;</span><span class="sr">/pre&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;  end&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="kp">private</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;  def authenticate_with_auth_token auth_token</span>
+</span><span class='line'><span class="sr">    unless auth_token.include?(&amp;lsquo;:&amp;rsquo;)</span>
+</span><span class='line'><span class="sr">      authentication_error</span>
+</span><span class='line'><span class="sr">      return</span>
+</span><span class='line'><span class="sr">    end&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">user_id</span> <span class="o">=</span> <span class="n">auth_token</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;:&#39;</span><span class="p">)</span><span class="o">.</span><span class="n">first</span>
+</span><span class='line'><span class="n">user</span> <span class="o">=</span> <span class="no">User</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="nb">id</span><span class="p">:</span> <span class="n">user_id</span><span class="p">)</span><span class="o">.</span><span class="n">first</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">if</span> <span class="n">user</span> <span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span> <span class="no">Devise</span><span class="o">.</span><span class="n">secure_compare</span><span class="p">(</span><span class="n">user</span><span class="o">.</span><span class="n">access_token</span><span class="p">,</span> <span class="n">auth_token</span><span class="p">)</span>
+</span><span class='line'>  <span class="c1"># User can access</span>
+</span><span class='line'>  <span class="n">sign_in</span> <span class="n">user</span><span class="p">,</span> <span class="ss">store</span><span class="p">:</span> <span class="kp">false</span>
+</span><span class='line'><span class="k">else</span>
+</span><span class='line'>  <span class="n">authentication_error</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'><span class="o">&lt;</span><span class="sr">/code&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="k">end</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;  ##</span>
+</span><span class='line'><span class="sr">  # Authentication Failure</span>
+</span><span class='line'><span class="sr">  # Renders a 401 error</span>
+</span><span class='line'><span class="sr">  def authentication_error</span>
+</span><span class='line'><span class="sr">    # User&amp;rsquo;s token is either invalid or not in the right format</span>
+</span><span class='line'><span class="sr">    render json: {error: t(&amp;lsquo;application_controller.unauthorized&amp;rsquo;)}, status: 401  # Authentication timeout</span>
+</span><span class='line'><span class="sr">  end</span>
+</span><span class='line'><span class="sr">end</span>
+</span><span class='line'><span class="sr">&lt;code&gt;</span>
+</span><span class='line'><span class="sr">We conclude the auth process by providing the routes and the session controller:</span>
+</span><span class='line'><span class="sr">&lt;/</span><span class="n">code</span><span class="o">&gt;</span><span class="n">ruby</span>
+</span><span class='line'><span class="no">Rails</span><span class="o">.</span><span class="n">application</span><span class="o">.</span><span class="n">routes</span><span class="o">.</span><span class="n">draw</span> <span class="k">do</span>
+</span><span class='line'>  <span class="n">devise_for</span> <span class="ss">:user</span><span class="p">,</span> <span class="ss">only</span><span class="p">:</span> <span class="o">[]&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;  namespace :v1, defaults: { format: :json } do</span>
+</span><span class='line'><span class="sr">    resource :login, only: [:create], controller: :sessions</span>
+</span><span class='line'><span class="sr">  end</span>
+</span><span class='line'><span class="sr">end</span>
+</span><span class='line'><span class="sr">&lt;code&gt;</span>
+</span><span class='line'><span class="sr">and the session controller:</span>
+</span><span class='line'><span class="sr">&lt;/</span><span class="n">code</span><span class="o">&gt;</span><span class="n">ruby</span><span class="o">&lt;</span><span class="sr">/p&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;h1&gt;app/</span><span class="n">controllers</span><span class="o">/</span><span class="n">v1</span><span class="o">/</span><span class="n">sessions_controller</span><span class="o">.</span><span class="n">rb</span><span class="o">&lt;</span><span class="sr">/h1&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;module V1</span>
+</span><span class='line'><span class="sr">  class SessionsController &amp;lt; ApplicationController</span>
+</span><span class='line'><span class="sr">    skip_before_action :authenticate_user_from_token!&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="c1"># POST /v1/login</span>
+</span><span class='line'><span class="k">def</span> <span class="nf">create</span>
+</span><span class='line'>  <span class="vi">@user</span> <span class="o">=</span> <span class="no">User</span><span class="o">.</span><span class="n">find_for_database_authentication</span><span class="p">(</span><span class="ss">email</span><span class="p">:</span> <span class="n">params</span><span class="o">[</span><span class="ss">:username</span><span class="o">]</span><span class="p">)</span>
+</span><span class='line'>  <span class="k">return</span> <span class="n">invalid_login_attempt</span> <span class="k">unless</span> <span class="vi">@user</span>
+</span><span class='line'>
+</span><span class='line'>  <span class="k">if</span> <span class="vi">@user</span><span class="o">.</span><span class="n">valid_password?</span><span class="p">(</span><span class="n">params</span><span class="o">[</span><span class="ss">:password</span><span class="o">]</span><span class="p">)</span>
+</span><span class='line'>    <span class="n">sign_in</span> <span class="ss">:user</span><span class="p">,</span> <span class="vi">@user</span>
+</span><span class='line'>    <span class="n">render</span> <span class="ss">json</span><span class="p">:</span> <span class="vi">@user</span><span class="p">,</span> <span class="ss">serializer</span><span class="p">:</span> <span class="no">SessionSerializer</span><span class="p">,</span> <span class="ss">root</span><span class="p">:</span> <span class="kp">nil</span>
+</span><span class='line'>  <span class="k">else</span>
+</span><span class='line'>    <span class="n">invalid_login_attempt</span>
+</span><span class='line'>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="kp">private</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">invalid_login_attempt</span>
+</span><span class='line'>  <span class="n">warden</span><span class="o">.</span><span class="n">custom_failure!</span>
+</span><span class='line'>  <span class="n">render</span> <span class="ss">json</span><span class="p">:</span> <span class="p">{</span><span class="ss">error</span><span class="p">:</span> <span class="n">t</span><span class="p">(</span><span class="s1">&#39;sessions_controller.invalid_login_attempt&#39;</span><span class="p">)},</span> <span class="ss">status</span><span class="p">:</span> <span class="ss">:unprocessable_entity</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'><span class="o">&lt;</span><span class="sr">/code&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">code</span><span class="o">&gt;</span>
+</span><span class='line'><span class="no">The</span> <span class="no">SessionSerializer</span> <span class="n">is</span> <span class="n">an</span> <span class="no">Active</span> <span class="no">Model</span> <span class="no">Serializer</span> <span class="n">object</span><span class="p">,</span> <span class="n">something</span> <span class="n">like</span> <span class="ss">this</span><span class="p">:</span>
+</span><span class='line'><span class="o">&lt;</span><span class="sr">/code&gt;ruby&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">h1</span><span class="o">&gt;</span><span class="n">app</span><span class="o">/</span><span class="n">serializers</span><span class="o">/</span><span class="n">v1</span><span class="o">/</span><span class="n">session_serializer</span><span class="o">.</span><span class="n">rb</span><span class="o">&lt;</span><span class="sr">/h1&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="sr">&lt;p&gt;module V1</span>
+</span><span class='line'><span class="sr">  class SessionSerializer &amp;lt; ActiveModel::Serializer&lt;/</span><span class="nb">p</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="n">pre</span><span class="o">&gt;&lt;</span><span class="n">code</span><span class="o">&gt;</span><span class="n">attributes</span> <span class="ss">:email</span><span class="p">,</span> <span class="ss">:token_type</span><span class="p">,</span> <span class="ss">:user_id</span><span class="p">,</span> <span class="ss">:access_token</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">user_id</span>
+</span><span class='line'>  <span class="n">object</span><span class="o">.</span><span class="n">id</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'>
+</span><span class='line'><span class="k">def</span> <span class="nf">token_type</span>
+</span><span class='line'>  <span class="s1">&#39;Bearer&#39;</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'><span class="o">&lt;</span><span class="sr">/code&gt;&lt;/</span><span class="n">pre</span><span class="o">&gt;</span>
+</span><span class='line'>
+</span><span class='line'><span class="o">&lt;</span><span class="nb">p</span><span class="o">&gt;</span>  <span class="k">end</span>
+</span><span class='line'><span class="k">end</span>
+</span><span class='line'><span class="o">&lt;</span><span class="n">code</span><span class="o">&gt;</span>
+</span><span class='line'><span class="no">That</span><span class="err">&#39;</span><span class="n">s</span> <span class="n">it</span><span class="o">.</span> <span class="no">Migrate</span><span class="p">,</span> <span class="n">run</span> <span class="n">the</span> <span class="n">server</span><span class="p">,</span> <span class="ow">and</span> <span class="n">create</span> <span class="n">a</span> <span class="n">user</span> <span class="n">via</span> <span class="n">the</span> <span class="n">console</span><span class="o">.</span> <span class="no">You</span> <span class="n">should</span> <span class="n">get</span> <span class="n">something</span> <span class="n">like</span> <span class="ss">this</span><span class="p">:</span>
+</span><span class='line'><span class="o">&lt;</span><span class="sr">/code&gt;</span>
+</span><span class='line'><span class="sr">$ curl localhost:3002/</span><span class="n">v1</span><span class="o">/</span><span class="n">login</span> <span class="o">&amp;</span><span class="n">ndash</span><span class="p">;</span><span class="n">data</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="n">username</span><span class="o">=</span><span class="n">user</span><span class="vi">@example</span><span class="o">.</span><span class="n">com</span><span class="o">&amp;</span><span class="n">amp</span><span class="p">;</span><span class="n">password</span><span class="o">=</span><span class="n">password</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;</span>
+</span><span class='line'><span class="p">{</span>
+</span><span class='line'>  <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="n">token_type</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;:</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="no">Bearer</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;,</span>
+</span><span class='line'>  <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="n">user_id</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;:</span> <span class="mi">1</span><span class="p">,</span>
+</span><span class='line'>  <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="n">access_token</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;:</span> <span class="o">&amp;</span><span class="n">ldquo</span><span class="p">;</span><span class="mi">1</span><span class="ss">:MPSMSopcQQWr</span><span class="o">-</span><span class="no">LnVUySs</span><span class="o">&amp;</span><span class="n">rdquo</span><span class="p">;</span>
+</span><span class='line'><span class="p">}</span>
+</span></code></pre></td></tr></table></div></figure></p>
+
+<h2>Creating a resource</h2>
+
+<p>I won&rsquo;t go in detail here, the task is just plain RoR. We&rsquo;ll create a Story resource and a controller that will handle the user creation. You&rsquo;ll find the complete rails app in this repo. Moving on.</p>
+
+<h2>CORS</h2>
+
+<h2>Next up</h2>
+
+<p>For readability I&rsquo;ll split the article here, jump here to start building the frontend.</p>
+]]></content>
+  </entry>
+  
+</feed>

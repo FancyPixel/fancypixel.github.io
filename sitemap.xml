@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url>
+    <loc>http://fancypixel.github.io/blog/2015/01/29/react-plus-flux-backed-by-rails-api-part-2/</loc>
+    <lastmod>2015-01-29T10:31:00+01:00</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>http://fancypixel.github.io/blog/2015/01/28/react-plus-flux-backed-by-rails-api/</loc>
+    <lastmod>2015-01-28T16:04:00+01:00</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>http://fancypixel.github.io/blog/2014/07/01/fun-with-ibeacon/</loc>
+    <lastmod>2014-07-01T20:47:00+02:00</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>http://fancypixel.github.io/archives/</loc>
+    <lastmod>2015-01-30T14:21:55+01:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>http://fancypixel.github.io/blog/archives/</loc>
+    <lastmod>2015-01-30T14:21:55+01:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>http://fancypixel.github.io/blog/</loc>
+    <lastmod>2015-01-30T14:21:55+01:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>http://fancypixel.github.io/</loc>
+    <lastmod>2015-01-30T14:21:55+01:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
+  </url>
+</urlset>
