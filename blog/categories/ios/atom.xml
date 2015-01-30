@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 
   <title><![CDATA[Category: ios | Fancy Pixel]]></title>
-  <link href="http://fancypixel.github.io/blog/categories/ios/atom.xml" rel="self"/>
-  <link href="http://fancypixel.github.io/"/>
-  <updated>2015-01-30T14:21:55+01:00</updated>
-  <id>http://fancypixel.github.io/</id>
+  <link href="http:///blog/categories/ios/atom.xml" rel="self"/>
+  <link href="http:///"/>
+  <updated>2015-01-30T14:32:54+01:00</updated>
+  <id>http:///</id>
   <author>
     <name><![CDATA[Fancy Pixel]]></name>
     
@@ -15,9 +15,9 @@
   
   <entry>
     <title type="html"><![CDATA[Fun with iBeacon]]></title>
-    <link href="http://fancypixel.github.io/blog/2014/07/01/fun-with-ibeacon/"/>
+    <link href="http:///blog/2014/07/01/fun-with-ibeacon/"/>
     <updated>2014-07-01T20:47:00+02:00</updated>
-    <id>http://fancypixel.github.io/blog/2014/07/01/fun-with-ibeacon</id>
+    <id>http:///blog/2014/07/01/fun-with-ibeacon</id>
     <content type="html"><![CDATA[<p>You probably know already what <a href="https://developer.apple.com/library/ios/documentation/userexperience/conceptual/LocationAwarenessPG/RegionMonitoring/RegionMonitoring.html">iBeacon</a> is, but just to reiterate, iBeacon is the Apple way of saying Bluetooth 4 Low Energy. At the cost of sounding like a mindless drone, by &lsquo;the Apple way of&rsquo; I mean &lsquo;it just works and shows a lot of potential&rsquo;. An iBeacon is a simple B4LE device that keeps broadcasting its presence. Other B4LE devices can sense when they reach the beacon without draining the battery (hence the LE) and making the user scream in agony. &ldquo;Oook, what do I do with it?&rdquo;. The best thing you can do is locating a user without the GPS, which means locating a user inside a building. The cool thing is that it&rsquo;s fast, it takes seconds to detect a beacon and to react to its vicinity (or lack there of), and it works within the reach of Bluetooth technology (let&rsquo;s say around a 50 meters radius). I should also mention that it works fine with Android too.</p>
 
 <p>This week an <a href="http://estimote.com">Estimote</a> developer kit arrived in our offices, so we took the chance to play around with it.</p>
