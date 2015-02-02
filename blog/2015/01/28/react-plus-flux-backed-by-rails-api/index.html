@@ -1,0 +1,380 @@
+
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html" charset="UTF-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+	<meta charset="utf-8">
+	<title>React + Flux backed by Rails API - Part 1 | Fancy Pixel</title>
+
+	<meta name="author" content="Fancy Pixel">
+	
+	<meta name="description" content="Fancy Pixel 28 Jan 2015 React + Flux Backed by Rails API - Part 1 I&rsquo;ve been working on a frontend for a project we are developing here at &hellip;">
+
+	<meta name="HandheldFriendly" content="True" />
+	<meta name="MobileOptimized" content="320" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+	<link href="/atom.xml" rel="alternate" title="Fancy Pixel" type="application/atom+xml">
+	<link rel="canonical" href="">
+        <link href='http://fonts.googleapis.com/css?family=Kaushan+Script' rel='stylesheet' type='text/css'>
+        <link href="/favicon.png" rel="shortcut icon">
+	<link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic|Open+Sans:700,400" />
+	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+	<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/styles/github.min.css" />
+	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+</head>
+
+
+<body class="post-template">
+  <main class="content" role="main"><article class="post">
+  
+	<header class="post-header">
+		<a id="blog-logo" href="/">Fancy Pixel</a>
+	</header>
+	<span class="post-meta">28 Jan 2015</span>
+	<h1 class="post-title">React + Flux Backed by Rails API - Part 1</h1>
+
+	<section class="post-content">
+		<p>I&rsquo;ve been working on a frontend for a project we are developing here at Fancy Pixel. We are embracing what looks like a good habit: slicing what would be a monolithic Rails app in a lightweight backend serving APIs and a frontend consuming them. We did this in the not so distant past using Angular.js. It was all fine and dandy, until it wasn&rsquo;t. There&rsquo;s something about it that doesn&rsquo;t sit right with me, I wouldn&rsquo;t go in detail, since many others already did, but let&rsquo;s just say that there&rsquo;s too much magic involved for my tastes (says the guy using Rails). Magic is fine as long as I can figure out how to tinker with the internals when things go down south. With Angular the effort seems too much, but that&rsquo;s just personal taste really. Also I can&rsquo;t deny that the major structural changes introduced in 2.0 were the last nail in the coffin.<br/>
+I wanted to try something new, something that would enforce a solid architecture of our apps, letting me control the single cogs in the engine. React got a lot of good press in the past months, so I took the chance to dive in. In this three-part post you&rsquo;ll find pretty much everything I learned by writing a frontend using React, with a vanilla Flux architecture, consuming an API written in Rails.</p>
+
+<!-- More -->
+
+
+<h2>Choosing the backend</h2>
+
+<p>Given our experience, the obvious choice for us was Rails, but with a twist: <a href="https://github.com/rails-api/rails-api">rails-api</a>. Rails-api is a stripped down version of Rails, where most of the &lsquo;<em>useless</em>&rsquo; middleware is not included (but you can include it might you need it). Using Rails to serve JSON might seem overkill to most, but the Github page of rails-api has some really good points to counter this argument, and I think they are spot on.
+TL;DR version: Rails is awesome, let&rsquo;s take advantage of that.</p>
+
+<h2>The frontend technology</h2>
+
+<p>React is javascript library for building user interfaces built and open sourced by the Facebook&rsquo;s engineers. Its major selling point is the ability to provide a dynamic and fast way to build isomorphic apps.<br/>
+Isomorphic means that the app can be rendered with ease on both the server and the client, which helps with SEO.<br/>
+Personally, I couldn&rsquo;t care less about SEO, even if I understand how important it is&hellip; I was really sold on React by the Virtual DOM and how the data is organized and handled in React views.
+The Virtual DOM is something that we&rsquo;re going to see implemented in other JS frameworks (Ember does that already if I&rsquo;m not mistaken). The views can be rendered on the server for the initial request, than the underlying tech is going to render subsequent pages in a Virtual DOM, that is then diffed with the actual DOM, and then only the differences are changes in the visible page. And it&rsquo;s fast. Brilliant. This enables us to start writing frontend like we used way back: in a declarative way&hellip; we just specify how the UI should look, when data changes React takes care of the page refresh, changing only the parts that need to be changed.</p>
+
+<h2>Flux</h2>
+
+<p>This covers the backend and the views, we&rsquo;re missing something in between, say, an architecture to follow. Flux is an architecture for building web UIs, and works really well in combination with React (but it can really be applied anywhere).</p>
+
+<h2>Here comes trouble</h2>
+
+<p>I never was a big fan of implementing web UI, CSS always gets messy, Javascript files become scary monoliths where crappy code goes to die, while developers test their spelunker skills and loose their sanity. Maybe I&rsquo;m just crap, but even using Sass and Coffeescript never really solved my issues.<br/>
+I was excited to try something really new, but I knew that getting started with such a joung technology would end up being a major pain in the ass. <br/>
+Case and point, learning and starting being productive (i.e.: writing usable code) took a fair bit of head scratching. There&rsquo;s still no clear &ldquo;best practice&rdquo; to perform common tasks, nor a clear starting configuration. Let&rsquo;s put it that way, if you come from the RoR world, where convention over configuration greatly reduces boilerplating and &ldquo;forces&rdquo; you to follow commonly established best practice, you&rsquo;re going to struggle with Flux.
+This post will cover the solutions we came up with, they may not be perfect, but I&rsquo;m fairly sure there are no anti-patterns in there, and they are a solid starting point.</p>
+
+<h1>Getting it all toghether</h1>
+
+<p>Let&rsquo;s start writing some code. We&rsquo;ll go through a simple Rails app that will feature user signup and login, and the ability to post a story. Just like a tiny Medium. Let&rsquo;s appropriately call it <em>Small</em>.</p>
+
+<p>Feel free to skip the Railsy part if you&rsquo;re only interested in Flux and React and jump to <a href="/blog/2015/01/29/react-plus-flux-backed-by-rails-api-part-2/">Part 2</a>.</p>
+
+<h1>Rails API</h1>
+
+<p>A while ago I stumbled upon <a href="http://slides.com/alanpeabody/breaking-up-with-the-asset-pipeline#/">this article</a> by Alan Peabody. I had a similar experience as him, you start working ona project, you use the right tools, you do your best to enforce good patterns, but in the end the frontend code just becomes scary, something no one wants to maintain. Let&rsquo;s break up with the asset pipeline, as the title says, and work towards making Rails beautiful again.
+We&rsquo;ll be using the rails-api gem for this task. You can generate a new app with its CLI command, or you can integrate it later. I&rsquo;ll do the later option, no reason really, just a habit.</p>
+
+<pre><code>rails new small
+</code></pre>
+
+<p>Next we&rsquo;ll add <code>rails-api</code>, <code>devise</code>, <code>active_model_serializers</code> gems to our Gemfile, and while we are at it we can remove all the gems that generate assets or view content, <code>jbuilder</code> included. Our Gemfile should look like this (test section omitted):</p>
+
+<pre><code class="ruby">source 'https://rubygems.org'
+
+gem 'rails', '4.2.0'
+gem 'rails-api', '~&gt; 0.4.0'
+gem 'active_model_serializers', '~&gt; 0.8.3' # NOTE: not the 0.9
+gem 'devise', '~&gt; 3.4.1'
+gem 'sqlite3'
+gem 'sdoc', '~&gt; 0.4.0', group: :doc
+gem 'thin'
+
+group :development, :test do
+  gem 'faker'
+  gem 'byebug'
+  gem 'web-console', '~&gt; 2.0'
+  gem 'spring'
+end
+</code></pre>
+
+<p>Now we need to change the application controller so that it inherits from <code>ActionController::API</code>, and kiss thei <code>protect_from_forgery</code> goodbye. Since we are serving only JSON, it makes sense to add</p>
+
+<pre><code class="ruby">respond_to :json
+</code></pre>
+
+<p>to the applciation controller, helps DRYing all out. While we are at it, we might as well delete the assets and views folders, we won&rsquo;t need them.</p>
+
+<h2>Authentication</h2>
+
+<p>Should I first define a resource? Maybe, but that&rsquo;s trivial, let&rsquo;s get the authentication out of the way. We are building an API, so no session will be involved, we have to authenticate the user in each request. I&rsquo;ll be using <a href="http://oauthlib.readthedocs.org/en/latest/oauth2/grants/password.html">Oauth2 Resource Owner Password Credentials Grant</a> which sounds fancy, but it&rsquo;s really just a token in the request header that authenticates the caller.<br/>
+The gem Devise used to implement a <code>token_authenticatable</code> strategy, but it was pulled for security reason. There are gems that implement the strategy (like Doorkeeper), but since it&rsquo;s fairly easy to implement I&rsquo;ll do it for myself. Let&rsquo;s install Devise first by adding it in the Gemfile and launching <code>rails generate devise:install</code> after a <code>bundle install</code>, then we create the user model:</p>
+
+<pre><code>rails generate devise User
+</code></pre>
+
+<h2>Token authentication</h2>
+
+<p>Token authentication was removed from Devise a couple of years ago, <a href="http://blog.plataformatec.com.br/2013/08/devise-3-1-now-with-more-secure-defaults/">this link</a> explains why. We have to implement it for ourselves, but it&rsquo;s quite easy. The token will be composed of two informations: the user&rsquo;s id followed by the token itself, separated by a <code>:</code>. We&rsquo;ll be using the user&rsquo;s database id for this sample, for semplicity&rsquo;s sake, but it&rsquo;s obviously not a smart thing to do.
+First things first, we&rsquo;ll add an <code>access_token</code> to the user (and a username too):</p>
+
+<pre><code class="ruby">class AddAccessTokenToUser &lt; ActiveRecord::Migration
+  def change
+    add_column :users, :access_token, :string
+    add_column :users, :username, :string
+  end
+end
+</code></pre>
+
+<p>and here&rsquo;s the User model:</p>
+
+<pre><code class="ruby"># app/models/user.rb
+class User &lt; ActiveRecord::Base
+  devise :database_authenticatable, :recoverable, :validatable
+
+  after_create :update_access_token!  
+
+  validates :username, presence: true
+  validates :email, presence: true
+
+  private
+
+  def update_access_token!
+    self.access_token = "#{self.id}:#{Devise.friendly_token}"
+    save
+  end
+
+end
+</code></pre>
+
+<p>The user authentication will sit in the application controller:</p>
+
+<pre><code class="ruby"># app/controllers/application_controller.rb
+class ApplicationController &lt; ActionController::API
+  include AbstractController::Translation
+
+  before_action :authenticate_user_from_token!
+
+  respond_to :json
+
+  ## 
+  # User Authentication
+  # Authenticates the user with OAuth2 Resource Owner Password Credentials Grant
+  def authenticate_user_from_token!
+    auth_token = request.headers['Authorization']
+
+    if auth_token
+      authenticate_with_auth_token auth_token
+    else
+      authentication_error
+    end
+  end
+
+  private
+
+  def authenticate_with_auth_token auth_token 
+    unless auth_token.include?(':')
+      authentication_error
+      return
+    end
+
+    user_id = auth_token.split(':').first
+    user = User.where(id: user_id).first
+
+    if user &amp;&amp; Devise.secure_compare(user.access_token, auth_token)
+      # User can access
+      sign_in user, store: false
+    else
+      authentication_error
+    end
+  end
+
+  ## 
+  # Authentication Failure
+  # Renders a 401 error
+  def authentication_error
+    # User's token is either invalid or not in the right format
+    render json: {error: t('unauthorized')}, status: 401  # Authentication timeout
+  end
+end
+</code></pre>
+
+<p>We conclude the auth process by providing the routes and the session controller:</p>
+
+<pre><code class="ruby"># config/routes.rb
+Rails.application.routes.draw do
+  devise_for :user, only: []
+
+  namespace :v1, defaults: { format: :json } do
+    resource :login, only: [:create], controller: :sessions
+  end
+end
+</code></pre>
+
+<p>and the session controller:</p>
+
+<pre><code class="ruby"># app/controllers/v1/sessions_controller.rb
+module V1
+  class SessionsController &lt; ApplicationController
+    skip_before_action :authenticate_user_from_token!
+
+    # POST /v1/login
+    def create
+      @user = User.find_for_database_authentication(email: params[:username])
+      return invalid_login_attempt unless @user
+
+      if @user.valid_password?(params[:password])
+        sign_in :user, @user
+        render json: @user, serializer: SessionSerializer, root: nil
+      else
+        invalid_login_attempt
+      end
+    end
+
+    private
+
+    def invalid_login_attempt
+      warden.custom_failure!
+      render json: {error: t('sessions_controller.invalid_login_attempt')}, status: :unprocessable_entity
+    end
+
+  end
+end
+</code></pre>
+
+<p>The SessionSerializer is an Active Model Serializer object, something like this:</p>
+
+<pre><code class="ruby"># app/serializers/v1/session_serializer.rb
+module V1
+  class SessionSerializer &lt; ActiveModel::Serializer
+
+    attributes :email, :token_type, :user_id, :access_token
+
+    def user_id
+      object.id
+    end
+
+    def token_type
+      'Bearer'
+    end
+
+  end
+end
+</code></pre>
+
+<p>That&rsquo;s it. Migrate, run the server, and create a user via the console. You should get something like this:</p>
+
+<pre><code>$ curl localhost:3002/v1/login --data "username=user@example.com&amp;password=password"
+{
+  "token_type": "Bearer",
+  "user_id": 1,
+  "access_token": "1:MPSMSopcQQWr-LnVUySs"
+}
+</code></pre>
+
+<h2>Creating a resource</h2>
+
+<p>I won&rsquo;t go in detail here, the task is just plain RoR. We&rsquo;ll create a Story resource and a controller that will handle the user creation. You&rsquo;ll find the complete rails app in <a href="https://github.com/FancyPixel/small-rails">this repo</a>. Moving on.</p>
+
+<h2>CORS</h2>
+
+<p>It&rsquo;s worth noting that the UI now will not be served by rails, it might even sit in a different server. There are solution that let us keep both UI ans API on the same domain, but for now we will need to enable Cross-origin resource sharing (<a href="http://en.wikipedia.org/wiki/Cross-origin_resource_sharing">CORS</a>). We can do this by adding the <a href="https://github.com/cyu/rack-cors">rack-cors gem</a> to our Gemfile and then add this in our <code>config/application.rb</code>:</p>
+
+<pre><code class="ruby">config.middleware.insert_before 'Rack::Runtime', 'Rack::Cors' do
+  allow do
+    origins '*'
+    resource '*',
+             headers: :any,
+             methods: [:get, :put, :post, :patch, :delete, :options]
+  end
+end
+</code></pre>
+
+<p>This opens up to every domain, so thread lightly.</p>
+
+<h2>Next up</h2>
+
+<p>That&rsquo;s it for the Rails part. It&rsquo;s such a joy writing just the API in Rails. It&rsquo;s easier to test, easier to maintain and it&rsquo;s blazing fast. Now we&rsquo;ll proceed with the frontend.
+For readability&rsquo;s sake I&rsquo;ll split the article here, jump to Part 2 to start building the frontend.</p>
+
+<p><a href="/blog/2015/01/29/react-plus-flux-backed-by-rails-api-part-2/">Part 2</a></p>
+
+	</section>
+
+  <footer class="post-footer">
+  <section class="author">
+    <h4>Fancy Pixel</h4>
+    <p></p>
+  </section>
+  <section class="share">
+    <h4>Share this post</h4>
+    <a class="icon-twitter" href="http://twitter.com/share?text=React + Flux backed by Rails API - Part 1&amp;url=http:///blog/2015/01/28/react-plus-flux-backed-by-rails-api/" onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+      <span class="hidden">Twitter</span>
+    </a>
+    <a class="icon-facebook" href="https://www.facebook.com/sharer/sharer.php?u=http:///blog/2015/01/28/react-plus-flux-backed-by-rails-api/" onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+      <span class="hidden">Facebook</span>
+    </a>
+    <a class="icon-google-plus" href="https://plus.google.com/share?url=http:///blog/2015/01/28/react-plus-flux-backed-by-rails-api/" onclick="window.open(this.href, 'google-plus-share', 'width=490,height=530');return false;">
+      <span class="hidden">Google+</span>
+    </a>
+  </section>
+</footer>
+  <hr>
+  
+    <div class="share">
+</div>
+
+  
+  
+</article></main>
+  <footer class="site-footer"><a class="subscribe icon-feed" href="http:///atom.xml"><span class="tooltip">Subscribe!</span></a>
+
+
+<div class="inner">
+
+
+Follow me on
+
+
+
+<a class="social twitter" href="http://twitter.com/FancyPixel" title="Twitter">Twitter</a>
+
+
+
+<a class="social github" href="http://github.com/fancypixel" title="GitHub">GitHub</a>
+
+
+
+<a class="social google_plus" href="http://plus.google.com/+FancypixelIt" title="Google+">Google+</a>
+
+
+<section class="copyright">All content copyright <a href="/">Fancy Pixel</a> © 2015 • All rights reserved.</section>
+
+<section class="poweredby">Casper theme by <a class="icon-ghost" href="http://tryghost.org">Ghost</a> &amp; Published with <a href="http://octopress.org">Octopress</a></section>
+
+</div>
+</footer>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+
+
+
+
+
+	<script type="text/javascript">
+		var _gaq = _gaq || [];
+		_gaq.push(['_setAccount', 'UA-49005091-8']);
+		_gaq.push(['_trackPageview']);
+
+		(function() {
+			var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+			ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+			var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+		})();
+	</script>
+
+
+</body>
+</html>
