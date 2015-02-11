@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 
   <title><![CDATA[Fancy Pixel]]></title>
-  <link href="http:///atom.xml" rel="self"/>
-  <link href="http:///"/>
-  <updated>2015-02-11T17:26:11+01:00</updated>
-  <id>http:///</id>
+  <link href="http://fancypixel.github.io/atom.xml" rel="self"/>
+  <link href="http://fancypixel.github.io/"/>
+  <updated>2015-02-11T17:37:04+01:00</updated>
+  <id>http://fancypixel.github.io/</id>
   <author>
     <name><![CDATA[Fancy Pixel]]></name>
     
@@ -15,10 +15,10 @@
   
   <entry>
     <title type="html"><![CDATA[React + Flux backed by Rails API - Part 3]]></title>
-    <link href="http:///blog/2015/01/30/react-plus-flux-backed-by-rails-api-part-3/"/>
+    <link href="http://fancypixel.github.io/blog/2015/01/30/react-plus-flux-backed-by-rails-api-part-3/"/>
     <updated>2015-01-30T15:40:43+01:00</updated>
-    <id>http:///blog/2015/01/30/react-plus-flux-backed-by-rails-api-part-3</id>
-    <content type="html"><![CDATA[<p>This is the last part of &ldquo;<em>React + Flux backed by Rails API</em>&rdquo;, make sure to check out <a href="http:///blog/2015/01/28/react-plus-flux-backed-by-rails-api/">Part 1</a> and <a href="http:///blog/2015/01/29/react-plus-flux-backed-by-rails-api-part-2/">Part 2</a> if you have missed them.</p>
+    <id>http://fancypixel.github.io/blog/2015/01/30/react-plus-flux-backed-by-rails-api-part-3</id>
+    <content type="html"><![CDATA[<p>This is the last part of &ldquo;<em>React + Flux backed by Rails API</em>&rdquo;, make sure to check out <a href="http://fancypixel.github.io/blog/2015/01/28/react-plus-flux-backed-by-rails-api/">Part 1</a> and <a href="http://fancypixel.github.io/blog/2015/01/29/react-plus-flux-backed-by-rails-api-part-2/">Part 2</a> if you have missed them.</p>
 
 <p>In part 1 we built a Rails API for a tiny clone of Medium, called appropriately <em>Small</em>. In part 2 we went through the setup of a React app with a Flux architecture, and built our authentication workflow. We close this series by providing the list of the stories and a creation page, protected by authentication. A note of warning: this is a quick and sometimes naive implementation, its main purpose is to show you how to get started with React and Flux, that&rsquo;s why we didn&rsquo;t put too much effort in handling possible errors or, for that matter, even showing progress indicators.</p>
 
@@ -199,7 +199,7 @@ The last element of the chain is the <code>StoryItem</code> component, that rend
 
 <p>If everything has gone smoothly we should see a list of stories, something like this:</p>
 
-<p><img class="center" src="http:///images/posts/2015-01-30/list.png" width="648" height="703" title="'Stories list'" ></p>
+<p><img class="center" src="http://fancypixel.github.io/images/posts/2015-01-30/list.png" width="648" height="703" title="'Stories list'" ></p>
 
 <p>What happens when I click a story? Looking back at our StoriesPage we have this bit of code:</p>
 
@@ -366,10 +366,10 @@ React is here to stay, and it&rsquo;s already influencing every other JS framewo
   
   <entry>
     <title type="html"><![CDATA[React + Flux backed by Rails API - Part 2]]></title>
-    <link href="http:///blog/2015/01/29/react-plus-flux-backed-by-rails-api-part-2/"/>
+    <link href="http://fancypixel.github.io/blog/2015/01/29/react-plus-flux-backed-by-rails-api-part-2/"/>
     <updated>2015-01-29T10:31:00+01:00</updated>
-    <id>http:///blog/2015/01/29/react-plus-flux-backed-by-rails-api-part-2</id>
-    <content type="html"><![CDATA[<p>This is the second part of &ldquo;React + Flux backed by Rails API&rdquo;, make sure to checkout <a href="http:///blog/2015/01/28/react-plus-flux-backed-by-rails-api/">Part 1</a>.</p>
+    <id>http://fancypixel.github.io/blog/2015/01/29/react-plus-flux-backed-by-rails-api-part-2</id>
+    <content type="html"><![CDATA[<p>This is the second part of &ldquo;React + Flux backed by Rails API&rdquo;, make sure to checkout <a href="http://fancypixel.github.io/blog/2015/01/28/react-plus-flux-backed-by-rails-api/">Part 1</a>.</p>
 
 <p>In part 1 we created our fancy Rails API, setup the authentication and defined a resource for our tiny clone of Medium.
 Time to reach the core of this post: the frontend built in React with the flux architecture.</p>
@@ -392,7 +392,7 @@ As I said before, Flux is just an architecture, so what am I importing really in
 
 <p>If you already took a stab at Flux you might know this diagram:</p>
 
-<p><img class="center" src="http:///images/posts/2015-01-29/flux.png" width="640" height="320" title="'Flux architecture'" ></p>
+<p><img class="center" src="http://fancypixel.github.io/images/posts/2015-01-29/flux.png" width="640" height="320" title="'Flux architecture'" ></p>
 
 <p>It might not be easy to understand at first, but it makes more and more sense while you are implementing all those coloured blocks. Let me shed some light over it if I can.</p>
 
@@ -953,15 +953,15 @@ Getting back to the login process, the render function defines the markup of our
 
 <p>It might be a good time to take another break, in the next part we&rsquo;ll go through listing and posting a new story in our app, and then it&rsquo;s conclusions time. I&rsquo;ll see you soon.</p>
 
-<p><a href="http:///blog/2015/01/30/react-plus-flux-backed-by-rails-api-part-3/">Part 3</a></p>
+<p><a href="http://fancypixel.github.io/blog/2015/01/30/react-plus-flux-backed-by-rails-api-part-3/">Part 3</a></p>
 ]]></content>
   </entry>
   
   <entry>
     <title type="html"><![CDATA[React + Flux backed by Rails API - Part 1]]></title>
-    <link href="http:///blog/2015/01/28/react-plus-flux-backed-by-rails-api/"/>
+    <link href="http://fancypixel.github.io/blog/2015/01/28/react-plus-flux-backed-by-rails-api/"/>
     <updated>2015-01-28T16:04:00+01:00</updated>
-    <id>http:///blog/2015/01/28/react-plus-flux-backed-by-rails-api</id>
+    <id>http://fancypixel.github.io/blog/2015/01/28/react-plus-flux-backed-by-rails-api</id>
     <content type="html"><![CDATA[<p>I&rsquo;ve been working on a frontend for a project we are developing here at Fancy Pixel. We are embracing what looks like a good habit: slicing what would be a monolithic Rails app in a lightweight backend serving APIs and a frontend consuming them. We did this in the not so distant past using Angular.js. It was all fine and dandy, until it wasn&rsquo;t. There&rsquo;s something about it that doesn&rsquo;t sit right with me, I wouldn&rsquo;t go in detail, since many others already did, but let&rsquo;s just say that there&rsquo;s too much magic involved for my tastes (says the guy using Rails). Magic is fine as long as I can figure out how to tinker with the internals when things go down south. With Angular the effort seems too much, but that&rsquo;s just personal taste really. Also I can&rsquo;t deny that the major structural changes introduced in 2.0 were the last nail in the coffin.<br/>
 I wanted to try something new, something that would enforce a solid architecture of our apps, letting me control the single cogs in the engine. React got a lot of good press in the past months, so I took the chance to dive in. In this three-part post you&rsquo;ll find pretty much everything I learned by writing a frontend using React, with a vanilla Flux architecture, consuming an API written in Rails.</p>
 
@@ -995,7 +995,7 @@ This post will cover the solutions we came up with, they may not be perfect, but
 
 <p>Let&rsquo;s start writing some code. We&rsquo;ll go through a simple Rails app that will feature user signup and login, and the ability to post a story. Just like a tiny Medium. Let&rsquo;s appropriately call it <em>Small</em>.</p>
 
-<p>Feel free to skip the Railsy part if you&rsquo;re only interested in Flux and React and jump to <a href="http:///blog/2015/01/29/react-plus-flux-backed-by-rails-api-part-2/">Part 2</a>.</p>
+<p>Feel free to skip the Railsy part if you&rsquo;re only interested in Flux and React and jump to <a href="http://fancypixel.github.io/blog/2015/01/29/react-plus-flux-backed-by-rails-api-part-2/">Part 2</a>.</p>
 
 <h1>Rails API</h1>
 
@@ -1224,15 +1224,15 @@ end
 <p>That&rsquo;s it for the Rails part. It&rsquo;s such a joy writing just the API in Rails. It&rsquo;s easier to test, easier to maintain and it&rsquo;s blazing fast. Now we&rsquo;ll proceed with the frontend.
 For readability&rsquo;s sake I&rsquo;ll split the article here, jump to Part 2 to start building the frontend.</p>
 
-<p><a href="http:///blog/2015/01/29/react-plus-flux-backed-by-rails-api-part-2/">Part 2</a></p>
+<p><a href="http://fancypixel.github.io/blog/2015/01/29/react-plus-flux-backed-by-rails-api-part-2/">Part 2</a></p>
 ]]></content>
   </entry>
   
   <entry>
     <title type="html"><![CDATA[Fun with iBeacon]]></title>
-    <link href="http:///blog/2014/07/01/fun-with-ibeacon/"/>
+    <link href="http://fancypixel.github.io/blog/2014/07/01/fun-with-ibeacon/"/>
     <updated>2014-07-01T20:47:00+02:00</updated>
-    <id>http:///blog/2014/07/01/fun-with-ibeacon</id>
+    <id>http://fancypixel.github.io/blog/2014/07/01/fun-with-ibeacon</id>
     <content type="html"><![CDATA[<p>You probably know already what <a href="https://developer.apple.com/library/ios/documentation/userexperience/conceptual/LocationAwarenessPG/RegionMonitoring/RegionMonitoring.html">iBeacon</a> is, but just to reiterate, iBeacon is the Apple way of saying Bluetooth 4 Low Energy. At the cost of sounding like a mindless drone, by &lsquo;the Apple way of&rsquo; I mean &lsquo;it just works and shows a lot of potential&rsquo;. An iBeacon is a simple B4LE device that keeps broadcasting its presence. Other B4LE devices can sense when they reach the beacon without draining the battery (hence the LE) and making the user scream in agony. &ldquo;Oook, what do I do with it?&rdquo;. The best thing you can do is locating a user without the GPS, which means locating a user inside a building. The cool thing is that it&rsquo;s fast, it takes seconds to detect a beacon and to react to its vicinity (or lack there of), and it works within the reach of Bluetooth technology (let&rsquo;s say around a 50 meters radius). I should also mention that it works fine with Android too.</p>
 
 <p>This week an <a href="http://estimote.com">Estimote</a> developer kit arrived in our offices, so we took the chance to play around with it.</p>
@@ -1390,11 +1390,11 @@ Now that all that is out of the way, let&rsquo;s get to the code:</p>
 
 <p>And there we go, the iOS app:</p>
 
-<p><img class="center" src="http:///images/posts/2014-07-01/iOS.png" title="'Who's Fancy iOS'" ></p>
+<p><img class="center" src="http://fancypixel.github.io/images/posts/2014-07-01/iOS.png" title="'Who's Fancy iOS'" ></p>
 
 <p>and the web page:</p>
 
-<p><img class="center" src="http:///images/posts/2014-07-01/rails.png" title="'Who's Fancy Rails'" ></p>
+<p><img class="center" src="http://fancypixel.github.io/images/posts/2014-07-01/rails.png" title="'Who's Fancy Rails'" ></p>
 
 <p>You can find the rails and iOS code <a href="https://github.com/FancyPixel/whosfancy-rails">here</a> and <a href="https://github.com/FancyPixel/whosfancy-ios">here</a>.</p>
 
