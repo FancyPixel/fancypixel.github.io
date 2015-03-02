@@ -4,7 +4,7 @@
   <title><![CDATA[Category: flux | Fancy Pixel]]></title>
   <link href="http://fancypixel.github.io/blog/categories/flux/atom.xml" rel="self"/>
   <link href="http://fancypixel.github.io/"/>
-  <updated>2015-02-11T17:37:04+01:00</updated>
+  <updated>2015-03-02T14:21:47+01:00</updated>
   <id>http://fancypixel.github.io/</id>
   <author>
     <name><![CDATA[Fancy Pixel]]></name>
@@ -1025,7 +1025,7 @@ group :development, :test do
 end
 </code></pre>
 
-<p>Now we need to change the application controller so that it inherits from <code>ActionController::API</code>, and kiss thei <code>protect_from_forgery</code> goodbye. Since we are serving only JSON, it makes sense to add</p>
+<p>Now we need to change the application controller so that it inherits from <code>ActionController::API</code>, and kiss the <code>protect_from_forgery</code> goodbye. Since we are serving only JSON, it makes sense to add</p>
 
 <pre><code class="ruby">respond_to :json
 </code></pre>

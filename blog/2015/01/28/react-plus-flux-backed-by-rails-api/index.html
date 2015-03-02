@@ -99,7 +99,7 @@ group :development, :test do
 end
 </code></pre>
 
-<p>Now we need to change the application controller so that it inherits from <code>ActionController::API</code>, and kiss thei <code>protect_from_forgery</code> goodbye. Since we are serving only JSON, it makes sense to add</p>
+<p>Now we need to change the application controller so that it inherits from <code>ActionController::API</code>, and kiss the <code>protect_from_forgery</code> goodbye. Since we are serving only JSON, it makes sense to add</p>
 
 <pre><code class="ruby">respond_to :json
 </code></pre>
