@@ -279,7 +279,7 @@ end
 
 <h2>CORS</h2>
 
-<p>It&rsquo;s worth noting that the UI now will not be served by rails, it might even sit in a different server. There are solution that let us keep both UI ans API on the same domain, but for now we will need to enable Cross-origin resource sharing (<a href="http://en.wikipedia.org/wiki/Cross-origin_resource_sharing">CORS</a>). We can do this by adding the <a href="https://github.com/cyu/rack-cors">rack-cors gem</a> to our Gemfile and then add this in our <code>config/application.rb</code>:</p>
+<p>It&rsquo;s worth noting that the UI now will not be served by rails, it might even sit in a different server. There are solution that let us keep both UI and API on the same domain, but for now we will need to enable Cross-origin resource sharing (<a href="http://en.wikipedia.org/wiki/Cross-origin_resource_sharing">CORS</a>). We can do this by adding the <a href="https://github.com/cyu/rack-cors">rack-cors gem</a> to our Gemfile and then add this in our <code>config/application.rb</code>:</p>
 
 <pre><code class="ruby">config.middleware.insert_before 'Rack::Runtime', 'Rack::Cors' do
   allow do
