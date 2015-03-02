@@ -247,7 +247,7 @@ $ curl localhost:3002/v1/login --data "username=user@example.com&password=passwo
 I won't go in detail here, the task is just plain RoR. We'll create a Story resource and a controller that will handle the user creation. You'll find the complete rails app in [this repo](https://github.com/FancyPixel/small-rails). Moving on.
 
 ##CORS
-It's worth noting that the UI now will not be served by rails, it might even sit in a different server. There are solution that let us keep both UI ans API on the same domain, but for now we will need to enable Cross-origin resource sharing ([CORS](http://en.wikipedia.org/wiki/Cross-origin_resource_sharing)). We can do this by adding the [rack-cors gem](https://github.com/cyu/rack-cors) to our Gemfile and then add this in our `config/application.rb`:
+It's worth noting that the UI now will not be served by rails, it might even sit in a different server. There are solution that let us keep both UI and API on the same domain, but for now we will need to enable Cross-origin resource sharing ([CORS](http://en.wikipedia.org/wiki/Cross-origin_resource_sharing)). We can do this by adding the [rack-cors gem](https://github.com/cyu/rack-cors) to our Gemfile and then add this in our `config/application.rb`:
 
 ~~~ruby
 config.middleware.insert_before 'Rack::Runtime', 'Rack::Cors' do
