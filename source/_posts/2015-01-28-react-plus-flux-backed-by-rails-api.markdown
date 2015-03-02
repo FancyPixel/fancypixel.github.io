@@ -62,7 +62,7 @@ group :development, :test do
 end
 ~~~
 
-Now we need to change the application controller so that it inherits from `ActionController::API`, and kiss thei `protect_from_forgery` goodbye. Since we are serving only JSON, it makes sense to add 
+Now we need to change the application controller so that it inherits from `ActionController::API`, and kiss the `protect_from_forgery` goodbye. Since we are serving only JSON, it makes sense to add 
 
 ~~~ruby
 respond_to :json
