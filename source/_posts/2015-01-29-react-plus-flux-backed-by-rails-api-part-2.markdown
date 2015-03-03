@@ -18,7 +18,7 @@ The whole idea behind splitting the backend from the fronted is to treat the web
 ##Tools
 I'll be using node's NPM to fetch the main tools, Gulp for the build and watch tasks, and Bower for the resources. 
 Before diving in the details, I have to warn you, I'm awful with gulp, so I pretty much gathered tasks around the web. So take my gulp file lightly, I'm planning on fixing all the horrors as soon as I can. You might also notice that I didn't use ES6, although I wanted to. I encountered in a couple of issues while working with ES6, so being time in short supply, I switched to vanilla Javascript.  
-You'll find the package.sjon and gulpfile.js in the [sample repo](https://github.com/FancyPixel/small-frontend), to make a long story short we'll be using `react` (obviously), `react-router`, `superagent` for the ajax calls and `flux`. 
+You'll find the package.json and gulpfile.js in the [sample repo](https://github.com/FancyPixel/small-frontend), to make a long story short we'll be using `react` (obviously), `react-router`, `superagent` for the ajax calls and `flux`. 
 As I said before, Flux is just an architecture, so what am I importing really in my package.json? Turns out that Facebook released a small library called `flux` that contains basically the code for a Flux Dispatcher (more on that later), that will cut down the amount of boilerplate code that we'll need to get started.
 
 ##Flux Architecture
@@ -508,11 +508,11 @@ var Header = React.createClass({
 module.exports = Header;
 ~~~
 
-As you can see we are finally defining our markup. Within this markup you might notice a couple of calls within curly braces, that references `this.props`. This object is filled with the properties declared in the previous component, so that's how a parent can forward informations down the chain of its child components. No more two way bindings, the data just flows from the root to the leaves. Also, React offers the ability to validate the props, by specifying the `propTypes`. Whenever we pass a prop to a component, React checks the data type, ad raises a JS warning in the inspector's console. That's a handy debugging tool that improves the reusability of a single component.  
+As you can see we are finally defining our markup. Within this markup you might notice a couple of calls within curly braces, that references `this.props`. This object is filled with the properties declared in the previous component, so that's how a parent can forward informations down the chain of its child components. No more two way bindings, the data just flows from the root to the leaves. Also, React offers the ability to validate the props, by specifying the `propTypes`. Whenever we pass a prop to a component, React checks the data type, and raises a JS warning in the inspector's console. That's a handy debugging tool that improves the reusability of a single component.  
 It's apparent how we are defining our views in a declarative way. Once defined we are not handling the state with a barrage of spaghetti jQuery calls, we keep in mind that the view will get refreshed down the line.  
 
 It does look convolute at first, right? The Flux architecture becomes awesome once you realise that _every_ interaction follows the same principle, then everything clicks in your brain. Noticed the `logout` function in the Header? It doesn't make a reference to the SessionStore, the Header doesn't even know it exists, it just follows a pattern: "_when something happens, create an action_".  
-The code is decoupled, the responsabilities are spearated, we can achieve modularity and reusability. For real this time. Brilliant. 
+The code is decoupled, the responsabilities are separated, we can achieve modularity and reusability. For real this time. Brilliant. 
 
 ##LoginPage
 We covered the server action, but we still need to let the user perform the login action. Let's fix that. You might have guessed it: we'll create a React component that will fire and action when the user submits the form.
