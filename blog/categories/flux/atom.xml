@@ -4,7 +4,7 @@
   <title><![CDATA[Category: flux | Fancy Pixel]]></title>
   <link href="http://fancypixel.github.io/blog/categories/flux/atom.xml" rel="self"/>
   <link href="http://fancypixel.github.io/"/>
-  <updated>2015-03-02T14:27:32+01:00</updated>
+  <updated>2015-03-03T18:15:44+01:00</updated>
   <id>http://fancypixel.github.io/</id>
   <author>
     <name><![CDATA[Fancy Pixel]]></name>
@@ -385,7 +385,7 @@ Time to reach the core of this post: the frontend built in React with the flux a
 
 <p>I&rsquo;ll be using node&rsquo;s NPM to fetch the main tools, Gulp for the build and watch tasks, and Bower for the resources.
 Before diving in the details, I have to warn you, I&rsquo;m awful with gulp, so I pretty much gathered tasks around the web. So take my gulp file lightly, I&rsquo;m planning on fixing all the horrors as soon as I can. You might also notice that I didn&rsquo;t use ES6, although I wanted to. I encountered in a couple of issues while working with ES6, so being time in short supply, I switched to vanilla Javascript.<br/>
-You&rsquo;ll find the package.sjon and gulpfile.js in the <a href="https://github.com/FancyPixel/small-frontend">sample repo</a>, to make a long story short we&rsquo;ll be using <code>react</code> (obviously), <code>react-router</code>, <code>superagent</code> for the ajax calls and <code>flux</code>.
+You&rsquo;ll find the package.json and gulpfile.js in the <a href="https://github.com/FancyPixel/small-frontend">sample repo</a>, to make a long story short we&rsquo;ll be using <code>react</code> (obviously), <code>react-router</code>, <code>superagent</code> for the ajax calls and <code>flux</code>.
 As I said before, Flux is just an architecture, so what am I importing really in my package.json? Turns out that Facebook released a small library called <code>flux</code> that contains basically the code for a Flux Dispatcher (more on that later), that will cut down the amount of boilerplate code that we&rsquo;ll need to get started.</p>
 
 <h2>Flux Architecture</h2>
@@ -877,11 +877,11 @@ var Header = React.createClass({
 module.exports = Header;
 </code></pre>
 
-<p>As you can see we are finally defining our markup. Within this markup you might notice a couple of calls within curly braces, that references <code>this.props</code>. This object is filled with the properties declared in the previous component, so that&rsquo;s how a parent can forward informations down the chain of its child components. No more two way bindings, the data just flows from the root to the leaves. Also, React offers the ability to validate the props, by specifying the <code>propTypes</code>. Whenever we pass a prop to a component, React checks the data type, ad raises a JS warning in the inspector&rsquo;s console. That&rsquo;s a handy debugging tool that improves the reusability of a single component.<br/>
+<p>As you can see we are finally defining our markup. Within this markup you might notice a couple of calls within curly braces, that references <code>this.props</code>. This object is filled with the properties declared in the previous component, so that&rsquo;s how a parent can forward informations down the chain of its child components. No more two way bindings, the data just flows from the root to the leaves. Also, React offers the ability to validate the props, by specifying the <code>propTypes</code>. Whenever we pass a prop to a component, React checks the data type, and raises a JS warning in the inspector&rsquo;s console. That&rsquo;s a handy debugging tool that improves the reusability of a single component.<br/>
 It&rsquo;s apparent how we are defining our views in a declarative way. Once defined we are not handling the state with a barrage of spaghetti jQuery calls, we keep in mind that the view will get refreshed down the line.</p>
 
 <p>It does look convolute at first, right? The Flux architecture becomes awesome once you realise that <em>every</em> interaction follows the same principle, then everything clicks in your brain. Noticed the <code>logout</code> function in the Header? It doesn&rsquo;t make a reference to the SessionStore, the Header doesn&rsquo;t even know it exists, it just follows a pattern: &ldquo;<em>when something happens, create an action</em>&rdquo;.<br/>
-The code is decoupled, the responsabilities are spearated, we can achieve modularity and reusability. For real this time. Brilliant.</p>
+The code is decoupled, the responsabilities are separated, we can achieve modularity and reusability. For real this time. Brilliant.</p>
 
 <h2>LoginPage</h2>
 
