@@ -4,7 +4,7 @@
   <title><![CDATA[Category: watchkit | Fancy Pixel]]></title>
   <link href="http://fancypixel.github.io/blog/categories/watchkit/atom.xml" rel="self"/>
   <link href="http://fancypixel.github.io/"/>
-  <updated>2015-03-30T17:40:09+02:00</updated>
+  <updated>2015-03-30T17:41:43+02:00</updated>
   <id>http://fancypixel.github.io/</id>
   <author>
     <name><![CDATA[Fancy Pixel]]></name>
@@ -254,7 +254,7 @@ self.wormhole.passMessageObject(someObject, identifier: "mainUpdate")
 }
 </code></pre>
 
-<p>As long as we keep a strong pointer to the token, the system fires the notification block as soon as a write transaction is commited. You can find the updated code in the sample app.</p>
+<p>As long as we keep a strong pointer to the token, the system fires the notification block as soon as a write transaction is committed. You can find the updated code in the sample app.</p>
 
 <h2>Demo</h2>
 
