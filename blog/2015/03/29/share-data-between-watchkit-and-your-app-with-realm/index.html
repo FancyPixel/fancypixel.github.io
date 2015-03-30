@@ -265,7 +265,7 @@ self.wormhole.passMessageObject(someObject, identifier: "mainUpdate")
 
 <p><em>Update</em></p>
 
-<p>Once this post was live, Tim Anglade from Realm, reached out to me and was kind enough to point out that there&rsquo;s a built-in notification system in Realm, so MMWormHole in this case isn&rsquo;t really needed. The API is really easy to use and requires no configuration, here&rsquo;s how it works:</p>
+<p>Once this post was live, Tim Anglade from Realm reached out to me and was kind enough to point out that there&rsquo;s a built-in notification system in Realm, so MMWormHole in this case isn&rsquo;t really needed. The API is really easy to use and requires no configuration, here&rsquo;s how it works:</p>
 
 <pre><code>realmToken = RLMRealm.defaultRealm().addNotificationBlock { note, realm in
     self.reloadEntries()

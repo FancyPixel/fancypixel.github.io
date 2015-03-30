@@ -4,7 +4,7 @@
   <title><![CDATA[Category: watchkit | Fancy Pixel]]></title>
   <link href="http://fancypixel.github.io/blog/categories/watchkit/atom.xml" rel="self"/>
   <link href="http://fancypixel.github.io/"/>
-  <updated>2015-03-30T17:41:43+02:00</updated>
+  <updated>2015-03-30T19:00:54+02:00</updated>
   <id>http://fancypixel.github.io/</id>
   <author>
     <name><![CDATA[Fancy Pixel]]></name>
@@ -247,7 +247,7 @@ self.wormhole.passMessageObject(someObject, identifier: "mainUpdate")
 
 <p><em>Update</em></p>
 
-<p>Once this post was live, Tim Anglade from Realm, reached out to me and was kind enough to point out that there&rsquo;s a built-in notification system in Realm, so MMWormHole in this case isn&rsquo;t really needed. The API is really easy to use and requires no configuration, here&rsquo;s how it works:</p>
+<p>Once this post was live, Tim Anglade from Realm reached out to me and was kind enough to point out that there&rsquo;s a built-in notification system in Realm, so MMWormHole in this case isn&rsquo;t really needed. The API is really easy to use and requires no configuration, here&rsquo;s how it works:</p>
 
 <pre><code>realmToken = RLMRealm.defaultRealm().addNotificationBlock { note, realm in
     self.reloadEntries()
