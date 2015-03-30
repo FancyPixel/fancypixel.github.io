@@ -4,7 +4,7 @@
   <title><![CDATA[Fancy Pixel]]></title>
   <link href="http://fancypixel.github.io/atom.xml" rel="self"/>
   <link href="http://fancypixel.github.io/"/>
-  <updated>2015-03-30T16:04:27+02:00</updated>
+  <updated>2015-03-30T17:40:09+02:00</updated>
   <id>http://fancypixel.github.io/</id>
   <author>
     <name><![CDATA[Fancy Pixel]]></name>
@@ -242,6 +242,19 @@ self.wormhole.passMessageObject("update", identifier: "watchUpdate")
 // From the main app
 self.wormhole.passMessageObject(someObject, identifier: "mainUpdate")
 </code></pre>
+
+<h1>Realm notifications</h1>
+
+<p><em>Update</em></p>
+
+<p>Once this post was live, Tim Anglade from Realm, reached out to me and was kind enough to point out that there&rsquo;s a built-in notification system in Realm, so MMWormHole in this case isn&rsquo;t really needed. The API is really easy to use and requires no configuration, here&rsquo;s how it works:</p>
+
+<pre><code>realmToken = RLMRealm.defaultRealm().addNotificationBlock { note, realm in
+    self.reloadEntries()
+}
+</code></pre>
+
+<p>As long as we keep a strong pointer to the token, the system fires the notification block as soon as a write transaction is commited. You can find the updated code in the sample app.</p>
 
 <h2>Demo</h2>
 

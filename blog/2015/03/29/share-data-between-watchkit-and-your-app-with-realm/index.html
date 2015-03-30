@@ -261,6 +261,19 @@ self.wormhole.passMessageObject("update", identifier: "watchUpdate")
 self.wormhole.passMessageObject(someObject, identifier: "mainUpdate")
 </code></pre>
 
+<h1>Realm notifications</h1>
+
+<p><em>Update</em></p>
+
+<p>Once this post was live, Tim Anglade from Realm, reached out to me and was kind enough to point out that there&rsquo;s a built-in notification system in Realm, so MMWormHole in this case isn&rsquo;t really needed. The API is really easy to use and requires no configuration, here&rsquo;s how it works:</p>
+
+<pre><code>realmToken = RLMRealm.defaultRealm().addNotificationBlock { note, realm in
+    self.reloadEntries()
+}
+</code></pre>
+
+<p>As long as we keep a strong pointer to the token, the system fires the notification block as soon as a write transaction is commited. You can find the updated code in the sample app.</p>
+
 <h2>Demo</h2>
 
 <p>Here&rsquo;s the demo app in all of its glory:</p>
