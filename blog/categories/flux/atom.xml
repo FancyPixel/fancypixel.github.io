@@ -1,0 +1,1231 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: flux | Fancy Pixel]]></title>
+  <link href="http:///blog/categories/flux/atom.xml" rel="self"/>
+  <link href="http:///"/>
+  <updated>2015-04-13T21:41:46+02:00</updated>
+  <id>http:///</id>
+  <author>
+    <name><![CDATA[Fancy Pixel]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[React + Flux backed by Rails API - Part 3]]></title>
+    <link href="http:///blog/2015/01/30/react-plus-flux-backed-by-rails-api-part-3/"/>
+    <updated>2015-01-30T15:40:43+01:00</updated>
+    <id>http:///blog/2015/01/30/react-plus-flux-backed-by-rails-api-part-3</id>
+    <content type="html"><![CDATA[<p>This is the last part of &ldquo;<em>React + Flux backed by Rails API</em>&rdquo;, make sure to check out <a href="/blog/2015/01/28/react-plus-flux-backed-by-rails-api/">Part 1</a> and <a href="/blog/2015/01/29/react-plus-flux-backed-by-rails-api-part-2/">Part 2</a> if you have missed them.</p>
+
+<p>In part 1 we built a Rails API for a tiny clone of Medium, called appropriately <em>Small</em>. In part 2 we went through the setup of a React app with a Flux architecture, and built our authentication workflow. We close this series by providing the list of the stories and a creation page, protected by authentication. A note of warning: this is a quick and sometimes naive implementation, its main purpose is to show you how to get started with React and Flux, that&rsquo;s why we didn&rsquo;t put too much effort in handling possible errors or, for that matter, even showing progress indicators.</p>
+
+<!-- More -->
+
+
+<h1>Listing stories</h1>
+
+<p>Looking back at our routes, I defined a default route, mounted under <code>/stories</code>, handled by a component called <code>StoriesPage</code>. This component will abide the flux architecture, therefore its only goal in life will be displaying data fetched by a store, and re-render when something has changed. Before diving in this component, let&rsquo;s create a store then:</p>
+
+<pre><code class="js">// ./scripts/stores/StoryStore.rect.jsx
+var SmallAppDispatcher = require('../dispatcher/SmallAppDispatcher.js');
+var SmallConstants = require('../constants/SmallConstants.js');
+var EventEmitter = require('events').EventEmitter;
+var assign = require('object-assign');
+var WebAPIUtils = require('../utils/WebAPIUtils.js');
+
+var ActionTypes = SmallConstants.ActionTypes;
+var CHANGE_EVENT = 'change';
+
+var _stories = [];
+var _errors = [];
+var _story = { title: "", body: "", user: { username: "" } };
+
+var StoryStore = assign({}, EventEmitter.prototype, {
+
+  emitChange: function() {
+    this.emit(CHANGE_EVENT);
+  },
+
+  addChangeListener: function(callback) {
+    this.on(CHANGE_EVENT, callback);
+  },
+
+  removeChangeListener: function(callback) {
+    this.removeListener(CHANGE_EVENT, callback);
+  },
+
+  getAllStories: function() {
+    return _stories;
+  },
+
+  getStory: function() {
+    return _story;
+  },
+
+  getErrors: function() {
+    return _errors;
+  }
+
+});
+
+StoryStore.dispatchToken = SmallAppDispatcher.register(function(payload) {
+  var action = payload.action;
+
+  switch(action.type) {
+
+    case ActionTypes.RECEIVE_STORIES:
+      _stories = action.json.stories;
+      StoryStore.emitChange();
+      break;
+
+    case ActionTypes.RECEIVE_CREATED_STORY:
+      if (action.json) {
+        _stories.unshift(action.json.story);
+        _errors = [];
+      }
+      if (action.errors) {
+        _errors = action.errors;
+      }
+      StoryStore.emitChange();
+      break;
+
+    case ActionTypes.RECEIVE_STORY:
+      if (action.json) {
+        _story = action.json.story;
+        _errors = [];
+      }
+      if (action.errors) {
+        _errors = action.errors;
+      }
+      StoryStore.emitChange();
+      break;
+  }
+
+  return true;
+});
+
+module.exports = StoryStore;
+</code></pre>
+
+<p>At this point this should look familiar, we define our private state, the properties to access it from outside, and we register our callbacks. Once a new action tagged <code>RECEIVE_STORIES</code> is dispatched, we take the content of the payload, store it in the store&rsquo;s state and emit a change. The <code>RECEIVE_STORIES</code> is generated when <code>WebAPIUtils</code> receives the XHR response from the server, just as the login process. What component does fire this AJAX request though? That&rsquo;s a view action, initiated by the user when he requests the <code>/stories</code> route. Here&rsquo;s the component of this route handler:</p>
+
+<pre><code class="js">// ./scripts/components/StoriesPage.react.jsx
+var React = require('react');
+var WebAPIUtils = require('../../utils/WebAPIUtils.js');
+var StoryStore = require('../../stores/StoryStore.react.jsx');
+var ErrorNotice = require('../../components/common/ErrorNotice.react.jsx');
+var StoryActionCreators = require('../../actions/StoryActionCreators.react.jsx');
+var Router = require('react-router');
+var Link = Router.Link;
+var timeago = require('timeago');
+
+var StoriesPage = React.createClass({
+
+  getInitialState: function() {
+    return { 
+      stories: StoryStore.getAllStories(), 
+      errors: []
+    };
+  },
+
+  componentDidMount: function() {
+    StoryStore.addChangeListener(this._onChange);
+    StoryActionCreators.loadStories();
+  },
+
+  componentWillUnmount: function() {
+    StoryStore.removeChangeListener(this._onChange);
+  },
+
+  _onChange: function() {
+    this.setState({ 
+      stories: StoryStore.getAllStories(),
+      errors: StoryStore.getErrors()
+    }); 
+  },
+
+  render: function() {
+    var errors = (this.state.errors.length &gt; 0) ? &lt;ErrorNotice errors={this.state.errors}/&gt; : &lt;div&gt;&lt;/div&gt;;
+    return (
+      &lt;div&gt;
+        {errors}
+        &lt;div className="row"&gt;
+          &lt;StoriesList stories={this.state.stories} /&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    );
+  }
+});
+
+var StoryItem = React.createClass({
+  render: function() {
+    return (
+      &lt;li className="story"&gt;
+        &lt;div className="story__title"&gt;
+          &lt;Link to="story" params={ {storyId: this.props.story.id} }&gt;
+            {this.props.story.title}
+          &lt;/Link&gt;
+        &lt;/div&gt;
+        &lt;div className="story__body"&gt;{this.props.story['abstract']}...&lt;/div&gt;
+        &lt;span className="story__user"&gt;{this.props.story.user.username}&lt;/span&gt;
+        &lt;span className="story__date"&gt; - {timeago(this.props.story.created_at)}&lt;/span&gt;
+      &lt;/li&gt;
+      );
+  }
+});
+
+var StoriesList = React.createClass({
+  render: function() {
+    return (
+      &lt;ul className="large-8 medium-10 small-12 small-centered columns"&gt;
+        {this.props.stories.map(function(story, index){
+          return &lt;StoryItem story={story} key={"story-" + index}/&gt;
+        })}
+      &lt;/ul&gt;
+    );
+  }
+});
+
+module.exports = StoriesPage;
+</code></pre>
+
+<p>In this component I took advantage of the <code>componentDidMount</code> function to start the asynchronous request to our API. The stories are then retrieved from the aforementioned StoryStore and held in the component&rsquo;s state. In the <code>render</code> function I took the chance to show you a more React-y way to write a view, with modular and reusable components. These component might also live in separate files (or even projects), but for readability I put them in the same file. As you can see the page renders just one component, <code>StoriesList</code>, passing the stories list as props. The <code>StoriesList</code> uses the <code>.map</code> function to render one <code>StoryItem</code> component for each item in the stories array. Note how I needed to specify a unique key for the item (you could use an index as I did or even the story&rsquo;s <code>id</code>), this helps React keeping track of what element changed.<br/>
+The last element of the chain is the <code>StoryItem</code> component, that renders the props provided by its parents. You might notice the weird css class names, bear with me, I&rsquo;m trying to get accustomed with the <a href="https://bem.info/method/">BEM methodology</a>.</p>
+
+<h1>Loading a story</h1>
+
+<p>If everything has gone smoothly we should see a list of stories, something like this:</p>
+
+<p>{% img center /images/posts/2015-01-30/list.png  648 703 &lsquo;Stories list&rsquo; %}</p>
+
+<p>What happens when I click a story? Looking back at our StoriesPage we have this bit of code:</p>
+
+<pre><code class="html">  &lt;div className="story__title"&gt;
+    &lt;Link to="story" params={ {storyId: this.props.story.id} }&gt;
+      {this.props.story.title}
+    &lt;/Link&gt;
+  &lt;/div&gt;
+</code></pre>
+
+<p>and in our router we configured the route like this:</p>
+
+<pre><code class="js">  &lt;Route name="story" path="/stories/:storyId" handler={StoryPage} /&gt;
+</code></pre>
+
+<p>This means that once we select an item from the list, the router will switch the current component (or handler) with the <code>StoryPage</code> component, passing along a query parameter named <code>storyId</code>. Our <code>StoryPage</code> will then be able to get that id, and create a new action, requesting the download of the selected item. As usual the request will be handled by the WebAPIUtils, the response will be encapsulated in a new action, handled by the store, that emits the change, ending with our <code>StoryPage</code> refreshing its content. If you followed along you should have this pattern memorized by now. If so, you have the Flux architecture figured out.<br/>
+Just for kicks, here&rsquo;s the StoryPage:</p>
+
+<pre><code class="js">var React = require('react');
+var WebAPIUtils = require('../../utils/WebAPIUtils.js');
+var StoryStore = require('../../stores/StoryStore.react.jsx');
+var StoryActionCreators = require('../../actions/StoryActionCreators.react.jsx');
+var State = require('react-router').State;
+
+var StoryPage = React.createClass({
+
+  mixins: [ State ],
+
+  getInitialState: function() {
+    return { 
+      story: StoryStore.getStory(), 
+      errors: []
+    };
+  },
+
+  componentDidMount: function() {
+    StoryStore.addChangeListener(this._onChange);
+    StoryActionCreators.loadStory(this.getParams().storyId);
+  },
+
+  componentWillUnmount: function() {
+    StoryStore.removeChangeListener(this._onChange);
+  },
+
+  _onChange: function() {
+    this.setState({ 
+      story: StoryStore.getStory(),
+      errors: StoryStore.getErrors()
+    }); 
+  },
+
+  render: function() {
+    return (
+      &lt;div className="row"&gt;
+        &lt;div className="story__title"&gt;{this.state.story.title}&lt;/div&gt;
+        &lt;div className="story__body"&gt;{this.state.story.body}&lt;/div&gt;
+        &lt;div className="story__user"&gt;{this.state.story.user.username}&lt;/div&gt;
+      &lt;/div&gt;
+     );
+  }
+
+});
+
+module.exports = StoryPage;
+</code></pre>
+
+<h1>Creating a new story</h1>
+
+<p>We have one last thing to cover, and that&rsquo;s user input. We already did that in the authentication process, but without going into detail. Let&rsquo;s take a look at the <code>StoryNew</code> component:</p>
+
+<pre><code class="js">// ./scripts/components/stories/StoryNew.react.jsx
+var React = require('react');
+var SmallAppDispatcher = require('../../dispatcher/SmallAppDispatcher.js');
+var SmallConstants = require('../../constants/SmallConstants.js');
+var WebAPIUtils = require('../../utils/WebAPIUtils.js');
+var SessionStore = require('../../stores/SessionStore.react.jsx');
+var StoryActionCreators = require('../../actions/StoryActionCreators.react.jsx');
+var RouteActionCreators = require('../../actions/RouteActionCreators.react.jsx');
+
+var StoryNew = React.createClass({
+
+  componentDidMount: function() {
+    if (!SessionStore.isLoggedIn()) { 
+      RouteActionCreators.redirect('app');
+    }
+  },
+
+  _onSubmit: function(e) {
+    e.preventDefault();
+    var title = this.refs.title.getDOMNode().value;
+    var body = this.refs.body.getDOMNode().value;
+    StoryActionCreators.createStory(title, body);
+  },
+
+  render: function() {
+    return (
+      &lt;div className="row"&gt;
+        &lt;form onSubmit={this._onSubmit} className="new-story"&gt;
+          &lt;div className="new-story__title"&gt;
+            &lt;input type="text" placeholder="Title" name="title" ref="title" /&gt; 
+          &lt;/div&gt;
+          &lt;div className="new-story__body"&gt;
+            &lt;textarea rows="10" placeholder="Your story..." name="body" ref="body" /&gt; 
+          &lt;/div&gt;
+          &lt;div className="new-story__submit"&gt;
+            &lt;button type="submit"&gt;Create&lt;/button&gt;
+          &lt;/div&gt;
+         &lt;/form&gt;
+       &lt;/div&gt;
+     );
+  }
+
+});
+
+module.exports = StoryNew;
+</code></pre>
+
+<p>In the <code>render</code> function we defined an html form with a text input and a textarea. Notice the <code>ref</code> property of those tags, its value is the binding we&rsquo;ll use to retrieve their content when the users submits the form, using the <code>getDOMNode()</code> function. The submit once again kickstarts the Flux chain, by creating a view action. There&rsquo;s one thing to note here: posting a new story is an action performed by an authenticated user, so our WebAPIUtils method will look like this:</p>
+
+<pre><code class="js">  createStory: function(title, body) {
+    request.post('http://localhost:3002/v1/stories')
+      .set('Accept', 'application/json')
+      .set('Authorization', sessionStorage.getItem('accessToken'))
+      .send({ story: { title: title, body: body } })
+      .end(function(error, res){
+        if (res) {
+          if (res.error) {
+            var errorMsgs = _getErrors(res);
+            ServerActionCreators.receiveCreatedStory(null, errorMsgs);
+          } else {
+            json = JSON.parse(res.text);
+            ServerActionCreators.receiveCreatedStory(json, null);
+          }
+        }
+      });
+  }
+</code></pre>
+
+<p>Notice how we are passing the user&rsquo;s access token in the request header. That&rsquo;s it, our Rails API will authenticate the user thanks to that header, and the action will be performed.</p>
+
+<h1>Wrap up</h1>
+
+<p>This concludes this tiny application. As stated above, this is a naive implementation, not meant for production, so I didn&rsquo;t cover too much the error handling, the user feedback when the app is loading, or the testing.<br/>
+You can find all the sources here:</p>
+
+<p><a href="https://github.com/FancyPixel/small-rails">Rails API</a></p>
+
+<p><a href="https://github.com/FancyPixel/small-frontend">React + Flux frontend</a></p>
+
+<h2>Flux vs. Fluxxor vs. Reflux vs&hellip;</h2>
+
+<p>Flux is not the only implementation of this architecture, you can find several libraries that do so, some of them are tied to React, some of them aren&rsquo;t, some of them don&rsquo;t even use the whole architecture. It&rsquo;s just a matter of preferences, you can checkout <a href="https://github.com/kriasoft/react-starter-kit/issues/22">this discussion</a> on GitHub for more info. Personally I chose <em>vanilla</em> flux to have a better understanding of all the underlying components, once you figure that out, there&rsquo;s always time to trim out the fat.</p>
+
+<h1>The future of React</h1>
+
+<p>While I was writing this the React.js conf took place, you can find a summary of what they announced <a href="http://kevinold.com/2015/01/31/takeaways-from-reactjs-conf-2015.html">here</a>. The most exciting thing was probably React native. Being an iOS developer at the core I always frowned upon web frameworks with native capabilities like Phonegap or Rubymotion, but if you take a look at <a href="https://www.youtube.com/watch?v=7rDsRXj9-cU">this presentation</a> it&rsquo;s hard not to be excited about React native. The thing that strikes me the most is that they nailed the core concept: forget &ldquo;<em>Write once run anywhere</em>&rdquo;, embrace &ldquo;<em>Learn once, write anywhere</em>&rdquo;.<br/>
+React is here to stay, and it&rsquo;s already influencing every other JS framework around. I&rsquo;m excited to build future application with it and see how it&rsquo;s going to expand in the future.</p>
+
+<p>Until next time</p>
+
+<p><em>Andrea - <a href="https://twitter.com/theandreamazz">@theandreamazz</a></em></p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[React + Flux backed by Rails API - Part 2]]></title>
+    <link href="http:///blog/2015/01/29/react-plus-flux-backed-by-rails-api-part-2/"/>
+    <updated>2015-01-29T10:31:00+01:00</updated>
+    <id>http:///blog/2015/01/29/react-plus-flux-backed-by-rails-api-part-2</id>
+    <content type="html"><![CDATA[<p>This is the second part of &ldquo;React + Flux backed by Rails API&rdquo;, make sure to checkout <a href="/blog/2015/01/28/react-plus-flux-backed-by-rails-api/">Part 1</a>.</p>
+
+<p>In part 1 we created our fancy Rails API, setup the authentication and defined a resource for our tiny clone of Medium.
+Time to reach the core of this post: the frontend built in React with the flux architecture.</p>
+
+<!-- More -->
+
+
+<h1>Setting up the frontend</h1>
+
+<p>The whole idea behind splitting the backend from the fronted is to treat the web UI as a first class citizen, sitting in its own folder, in its own repo, with no bindings to the backend. The backend can be easily interchanged, as long as the API specs remain consistent. So we&rsquo;ll create a new app from scratch. We have the option to use automated tools like Yeoman, but I wasn&rsquo;t able to find the solution that fit all my needs.</p>
+
+<h2>Tools</h2>
+
+<p>I&rsquo;ll be using node&rsquo;s NPM to fetch the main tools, Gulp for the build and watch tasks, and Bower for the resources.
+Before diving in the details, I have to warn you, I&rsquo;m awful with gulp, so I pretty much gathered tasks around the web. So take my gulp file lightly, I&rsquo;m planning on fixing all the horrors as soon as I can. You might also notice that I didn&rsquo;t use ES6, although I wanted to. I encountered in a couple of issues while working with ES6, so being time in short supply, I switched to vanilla Javascript.<br/>
+You&rsquo;ll find the package.json and gulpfile.js in the <a href="https://github.com/FancyPixel/small-frontend">sample repo</a>, to make a long story short we&rsquo;ll be using <code>react</code> (obviously), <code>react-router</code>, <code>superagent</code> for the ajax calls and <code>flux</code>.
+As I said before, Flux is just an architecture, so what am I importing really in my package.json? Turns out that Facebook released a small library called <code>flux</code> that contains basically the code for a Flux Dispatcher (more on that later), that will cut down the amount of boilerplate code that we&rsquo;ll need to get started.</p>
+
+<h2>Flux Architecture</h2>
+
+<p>If you already took a stab at Flux you might know this diagram:</p>
+
+<p>{% img center /images/posts/2015-01-29/flux.png  640 320 &lsquo;Flux architecture&rsquo; %}</p>
+
+<p>It might not be easy to understand at first, but it makes more and more sense while you are implementing all those coloured blocks. Let me shed some light over it if I can.</p>
+
+<p>The leftmost block is our Web API, we built that in the previous part of this blog post, so we are set. Our API will be called by the &ldquo;Web API Utils&rdquo;, that&rsquo;s just a plain JS file making ajax requests. Eventually this JS component will receive an AJAX callback, and it&rsquo;ll need to update our frontend app. It does that using Actions. An action is just a data structure that tells the system what happened and what payload is associated with that action. <br/>
+There are two types of actions: the one initiated by a server (e.g.: an AJAX callback) and those initiated by the views (e.g.: the user clicks a button). The difference between the two is basically semantics.<br/>
+The actions are created through Action Creators, that are really just utility functions that build the action and toss it to the system, or to be more precise, the dispatcher.<br/>
+The dispatcher is a single object (one per app) that, as the name suggests, dispatches actions to those who registered interest in them. Look at it as a pub-sub mechanism, plain and simple.
+The objects that register interest in this actions are called Stores. Stores contain the application logic and state. They are similar to a model, but they manage the state of all the objects, not a single record.
+Stores are the one offering the state that will be presented by the React views. React views should hold as few state as possible, they should grab the state of the data from a store, and pass the state to their children as props.</p>
+
+<p>That&rsquo;s it really, it seems rather convoluted at first, but an example can clear the fog, let&rsquo;s consider the login process:</p>
+
+<ul>
+<li>The user enters his username and password, and clicks Login</li>
+<li>The React view handles the click event, grabs the content of the fields and creates an action through an action creator, with the tag <code>LOGIN_REQUEST</code> and a payload with the user&rsquo;s credentials</li>
+<li>The Action creator creates the <code>LOGIN_REQUEST</code> action with its payload attached, and alerts the Dispatcher</li>
+<li>The Action creator also calls the Web API utils, passing the payload</li>
+<li>The Web API Utils perform the AJAX call</li>
+<li>The Rails API responds authenticating the user, providing the JSON response</li>
+<li>The Web API Utils receives the JSON and creates a new action, called <code>LOGIN_RESPONSE</code>, with the new JSON as payload.</li>
+<li>The dispatcher is notified, and forwards the action to the store(s) that is(are) interested in a <code>LOGIN_RESPONSE</code> action</li>
+<li>The store (e.g.: a SessionStore) gets notified and extracts the payload from the action</li>
+<li>The store updates its state (username, auth token and login state set to true)</li>
+<li>The store emits its changes</li>
+<li>The React views are notified of the changes and can be refreshed</li>
+<li>The React views can grab the state from the store, and if needed pass the state to their children</li>
+</ul>
+
+
+<p>And that&rsquo;s it. Looks like a lot of work for a simple login, but the secret sauce that makes Flux work is that this pattern can be applied to every action performed by the user or the server. It keeps the main components decoupled, it&rsquo;s easier to maintain, and best of all, everything is tidy, for once.</p>
+
+<p>Ok, that was a mouthful, let&rsquo;s see some code.</p>
+
+<h1>Project structure</h1>
+
+<p>We&rsquo;ll start with the project structure.</p>
+
+<pre><code>scripts
+|-actions
+|-components
+  |-common
+  |-session
+  |-stories
+|-constants
+|-dispatcher
+|-stores
+|-utils
+app.jsx
+routes.jsx
+</code></pre>
+
+<p><code>app.jsx</code> will be our mounting point, it will render the app in our html template, nothing fancy:</p>
+
+<pre><code class="js">// app.jsx
+var React = require('react');
+var router = require('./stores/RouteStore.react.jsx').getRouter();
+window.React = React;
+
+router.run(function (Handler, state) {
+  React.render(&lt;Handler/&gt;, document.getElementById('content'));
+});
+</code></pre>
+
+<p>That&rsquo;s our first taste of React and JSX. JSX is a JS extension that lets us write nodes with a syntax similar to XML. It&rsquo;s optional, but it cleans up the syntax and can be handled with ease by designers.</p>
+
+<h2>Routes</h2>
+
+<p><code>router.jsx</code> holds all of our routes that will be used to instantiate react-router:</p>
+
+<pre><code class="js">// routes.jsx
+var React = require('react');
+var Router = require('react-router');
+var Route = Router.Route;
+var DefaultRoute = Router.DefaultRoute;
+
+var SmallApp = require('./components/SmallApp.react.jsx');
+var LoginPage = require('./components/session/LoginPage.react.jsx');
+var StoriesPage = require('./components/stories/StoriesPage.react.jsx');
+var StoryPage = require('./components/stories/StoryPage.react.jsx');
+var StoryNew = require('./components/stories/StoryNew.react.jsx');
+var SignupPage = require('./components/session/SignupPage.react.jsx');
+
+module.exports = (
+  &lt;Route name="app" path="/" handler={SmallApp}&gt;
+    &lt;DefaultRoute handler={StoriesPage} /&gt;
+    &lt;Route name="login" path="/login" handler={LoginPage}/&gt;
+    &lt;Route name="signup" path="/signup" handler={SignupPage}/&gt;
+    &lt;Route name="stories" path="/stories" handler={StoriesPage}/&gt;
+    &lt;Route name="story" path="/stories/:storyId" handler={StoryPage} /&gt;
+    &lt;Route name="new-story" path="/story/new" handler={StoryNew}/&gt;
+  &lt;/Route&gt;
+);
+</code></pre>
+
+<p>Routes are expressed in JSX syntax, we can specify a name (that will be used to perform transitions and to create links), an handler (the React component that will be mounted when the route is visited) and an optional path (that the user will see in his address bar). As you can see we can also mount routes inside another route in a RESTful way.</p>
+
+<h2>Dispatcher</h2>
+
+<p>The dispatcher is the core of the app, it&rsquo;s the central hub for our messages (actions). It&rsquo;s also a fairly easy component to implement, it&rsquo;s mostly just boilerplate code:</p>
+
+<pre><code class="js">// ./dispatcher/SmallAppDispatcher.js
+var SmallConstants = require('../constants/SmallConstants.js');
+var Dispatcher = require('flux').Dispatcher;
+var assign = require('object-assign');
+
+var PayloadSources = SmallConstants.PayloadSources;
+
+var SmallAppDispatcher = assign(new Dispatcher(), {
+
+  handleServerAction: function(action) {
+    var payload = {
+      source: PayloadSources.SERVER_ACTION,
+      action: action
+    };
+    this.dispatch(payload);
+  },
+
+  handleViewAction: function(action) {
+    var payload = {
+      source: PayloadSources.VIEW_ACTION,
+      action: action
+    };
+    this.dispatch(payload);
+  }
+});
+
+module.exports = SmallAppDispatcher;
+</code></pre>
+
+<p>We are basically defining two main methods that will be used to dispatch a message. We use two instead of one just for semantics: one will handle the dispatch of server-initiated action, the other one the view-initiated actions.<br/>
+Before proceeding to the meat of the implementation we&rsquo;ll take a look at the Constants file:</p>
+
+<pre><code class="js">// constants/SmallConstants.js
+var keyMirror = require('keymirror');
+
+var APIRoot = "http://localhost:3002";
+
+module.exports = {
+
+  APIEndpoints: {
+    LOGIN:          APIRoot + "/v1/login",
+    REGISTRATION:   APIRoot + "/v1/users",
+    STORIES:        APIRoot + "/v1/stories"
+  },
+
+  PayloadSources: keyMirror({
+    SERVER_ACTION: null,
+    VIEW_ACTION: null
+  }),
+
+  ActionTypes: keyMirror({
+    // Session
+    LOGIN_REQUEST: null,
+    LOGIN_RESPONSE: null,
+
+    // Routes
+    REDIRECT: null,
+
+    LOAD_STORIES: null,
+    RECEIVE_STORIES: null,
+    LOAD_STORY: null,
+    RECEIVE_STORY: null,
+    CREATE_STORY: null,
+    RECEIVE_CREATED_STORY: null
+  })
+
+};
+</code></pre>
+
+<p>This is an utility file that holds the constants that we&rsquo;ll use throughout the project, mainly the API endpoint and the types of action that we can perform in our app.
+Now, let&rsquo;s talk about the authentication process.</p>
+
+<h1>Authentication</h1>
+
+<p>As explained in the Flux example above, the data flow will be initiated by the user, that will visit the login page, fill a form with his credentials and click on submit. We&rsquo;ll handle the submit as a <code>VIEW_ACTION</code>, this means that our view will call a method of our action creator for the session. Let&rsquo;s take a look at it:</p>
+
+<pre><code class="js">// ./scripts/actions/SessionActionCreators.react.jsx
+var SmallAppDispatcher = require('../dispatcher/SmallAppDispatcher.js');
+var SmallConstants = require('../constants/SmallConstants.js');
+var WebAPIUtils = require('../utils/WebAPIUtils.js');
+
+var ActionTypes = SmallConstants.ActionTypes;
+
+module.exports = {
+
+  signup: function(email, password, passwordConfirmation) {
+    SmallAppDispatcher.handleViewAction({
+      type: ActionTypes.SIGNUP_REQUEST,
+      email: email,
+      password: password,
+      passwordConfirmation: passwordConfirmation
+    });
+    WebAPIUtils.signup(email, password, passwordConfirmation);
+  },
+
+  login: function(email, password) {
+    SmallAppDispatcher.handleViewAction({
+      type: ActionTypes.LOGIN_REQUEST,
+      email: email,
+      password: password
+    });
+    WebAPIUtils.login(email, password);
+  },
+
+  logout: function() {
+    SmallAppDispatcher.handleViewAction({
+      type: ActionTypes.LOGOUT
+    });
+  }
+
+};
+</code></pre>
+
+<p>This cover all the user-initiated actions in the context of the session. The login action creator as you can see creates a new ViewAction, attaching a payload with the user&rsquo;s email and password, and then calls the <code>WebAPIUtils.login</code> method. If other components registered their interest in receiving the <code>LOGIN_REQUEST</code> action, the dispatcher would deliver this action right now.<br/>
+The login method of our WebAPIUtils class is this:</p>
+
+<pre><code class="js">// ./scripts/utils/WeAPIUtils.js
+var ServerActionCreators = require('../actions/ServerActionCreators.react.jsx');
+var request = require('superagent');
+
+module.exports = {
+
+  login: function(email, password) {
+    request.post('http://localhost:3002/v1/login')
+      .send({ username: email, password: password, grant_type: 'password' })
+      .set('Accept', 'application/json')
+      .end(function(error, res){
+        if (res) {
+          if (res.error) {
+            var errorMsgs = _getErrors(res);
+            ServerActionCreators.receiveLogin(null, errorMsgs);
+          } else {
+            json = JSON.parse(res.text);
+            ServerActionCreators.receiveLogin(json, null);
+          }
+        }
+      });
+  },
+  // ...
+};
+</code></pre>
+
+<p>A common pattern should start to be apparent right now: no class is directly modifying the state of another one, but they are just creating new actions. That&rsquo;s the Flux way of handling data in a nutshell.<br/>
+To keep things tidy the actions for results of the login process are created in a separate action creator:</p>
+
+<pre><code class="js">// ./scripts/actions/ServerActionCreators.react.jsx
+var SmallAppDispatcher = require('../dispatcher/SmallAppDispatcher.js');
+var SmallConstants = require('../constants/SmallConstants.js');
+
+var ActionTypes = SmallConstants.ActionTypes;
+
+module.exports = {
+
+  receiveLogin: function(json, errors) {
+    SmallAppDispatcher.handleServerAction({
+      type: ActionTypes.LOGIN_RESPONSE,
+      json: json,
+      errors: errors
+    });
+  },
+
+ // ... 
+};
+</code></pre>
+
+<p>And this covers the server and view actions for the login process. Who handles the result though? Let&rsquo;s talk about stores.</p>
+
+<h2>SessionStore</h2>
+
+<p>Stores are like a mix between a model and a controller, they handle the data, the main state of the application, feeding the records to the views, while retrieving the data from a server. We are about to see the <code>SessionStore</code>, which keeps track of the current user (and holds his access token, used in the API calls) and listens for the <code>LOGIN_RESPONSE</code> action.</p>
+
+<pre><code class="js">// ./scripts/stores/SessionStore.react.jsx
+var SmallAppDispatcher = require('../dispatcher/SmallAppDispatcher.js');
+var SmallConstants = require('../constants/SmallConstants.js');
+var EventEmitter = require('events').EventEmitter;
+var assign = require('object-assign');
+
+var ActionTypes = SmallConstants.ActionTypes;
+var CHANGE_EVENT = 'change';
+
+// Load an access token from the session storage, you might want to implement
+// a 'remember me' using localSgorage
+var _accessToken = sessionStorage.getItem('accessToken')
+var _email = sessionStorage.getItem('email')
+var _errors = [];
+
+var SessionStore = assign({}, EventEmitter.prototype, {
+
+  emitChange: function() {
+    this.emit(CHANGE_EVENT);
+  },
+
+  addChangeListener: function(callback) {
+    this.on(CHANGE_EVENT, callback);
+  },
+
+  removeChangeListener: function(callback) {
+    this.removeListener(CHANGE_EVENT, callback);
+  },
+
+  isLoggedIn: function() {
+    return _accessToken ? true : false;    
+  },
+
+  getAccessToken: function() {
+    return _accessToken;
+  },
+
+  getEmail: function() {
+    return _email;
+  },
+
+  getErrors: function() {
+    return _errors;
+  }
+
+});
+
+SessionStore.dispatchToken = SmallAppDispatcher.register(function(payload) {
+  var action = payload.action;
+
+  switch(action.type) {
+
+    case ActionTypes.LOGIN_RESPONSE:
+      if (action.json &amp;&amp; action.json.access_token) {
+        _accessToken = action.json.access_token;
+        _email = action.json.email;
+        // Token will always live in the session, so that the API can grab it with no hassle
+        sessionStorage.setItem('accessToken', _accessToken);
+        sessionStorage.setItem('email', _email);
+      }
+      if (action.errors) {
+        _errors = action.errors;
+      }
+      SessionStore.emitChange();
+      break;
+
+    case ActionTypes.LOGOUT:
+      _accessToken = null;
+      _email = null;
+      sessionStorage.removeItem('accessToken');
+      sessionStorage.removeItem('email');
+      SessionStore.emitChange();
+      break;
+
+    default:
+  }
+
+  return true;
+});
+
+module.exports = SessionStore;
+</code></pre>
+
+<p>That looks like a bunch of code, but most of it is boilerplate, the interesting part is in the <code>.register</code> function. When the store receives the <code>LOGIN_RESPONSE</code> action unpacks the payload and checks wether the login was successful or not. It then updates its state (that will be accessed by the public properties declared on top of the file) and notifies a change to whomever might be listening (that&rsquo;s why we import node&rsquo;s EventEmitter and merge the class with it).<br/>
+Ok, we have the ability to send a view action, we receive the result and store it, cool, now we need to use this store somewhere and show some UI already.</p>
+
+<h2>Application</h2>
+
+<p>Having a store and a state brings up a tricky question: who should listen to its changes and who should use its state? Following the React philosophy we should find the component at the topmost of our view&rsquo;s tree, without bloating the component itself though. As far as session goes I think the best place is the root of our app. The root is the first component that is mounted by the routes, and if you take a look at our routes, that would be the component called <code>SmallApp</code>:</p>
+
+<pre><code class="js">  // ./scripts/components/SmallApp.react.jsx
+  var React = require('react');
+  var RouteHandler = require('react-router').RouteHandler;
+  var Header = require('../components/Header.react.jsx');
+  var SessionStore = require('../stores/SessionStore.react.jsx');
+  var RouteStore = require('../stores/RouteStore.react.jsx');
+
+  function getStateFromStores() {
+    return {
+      isLoggedIn: SessionStore.isLoggedIn(),
+      email: SessionStore.getEmail()
+    };
+  }
+
+  var SmallApp = React.createClass({
+
+    getInitialState: function() {
+      return getStateFromStores();
+    },
+
+    componentDidMount: function() {
+      SessionStore.addChangeListener(this._onChange);
+    },
+
+    componentWillUnmount: function() {
+      SessionStore.removeChangeListener(this._onChange);
+    },
+
+    _onChange: function() {
+      this.setState(getStateFromStores());
+    },
+
+    render: function() {
+      return (
+        &lt;div className="app"&gt;
+          &lt;Header 
+            isLoggedIn={this.state.isLoggedIn}
+            email={this.state.email} /&gt;
+          &lt;RouteHandler/&gt;
+        &lt;/div&gt;
+      );
+    }
+
+  });
+
+  module.exports = SmallApp;
+</code></pre>
+
+<p>This is a really simple component that serves as the root layout. If you take a closer look at the render function you can see that it only renders a React component named <code>Header</code> and then mounts the content provided by the Router. The header has a couple of properties though (React <code>props</code> to be exact) and we fill them with the <code>SmallApp</code> state. Those props will be accessible within the <code>Header</code> component. The <code>SmallApp</code> state is obtained by querying the <code>SessionStore</code> in two ways:</p>
+
+<ul>
+<li>by the function <code>getInitialState</code>, fired when the component is initialized</li>
+<li>by the <code>_onChange</code> function, called when the <code>Sessionstore</code> emits a new change.</li>
+</ul>
+
+
+<p>The latter behaviour is possible since the <code>SmallApp</code> component registered its callback in the function <code>componentDidMount</code>, that is fired, you guessed it, when the component is mounted in the page.</p>
+
+<p>Small recap: the user initiates a view action, the WebAPIUtils calls the server, the server replies, a new action is raised, the dispatcher forwards it to the SessionStore, which updates its status and emits a change event, catched by the <code>SmallApp</code> component. The <code>SmallApp</code> component forwards its state to its child: the <code>Header</code> component. Wew! Let&rsquo;s close the circle by writing our Header:</p>
+
+<pre><code class="js">// ./scripts/components/Header.react.jsx
+var React = require('react');
+var Router = require('react-router');
+var Link = Router.Link;
+var ReactPropTypes = React.PropTypes;
+var SessionActionCreators = require('../actions/SessionActionCreators.react.jsx');
+
+var Header = React.createClass({
+
+  propTypes: {
+    isLoggedIn: ReactPropTypes.bool,
+    email: ReactPropTypes.string
+  },
+  logout: function(e) {
+    e.preventDefault();
+    SessionActionCreators.logout();
+  },
+  render: function() {
+    var rightNav = this.props.isLoggedIn ? (
+      &lt;ul className="right"&gt;
+        &lt;li className="has-dropdown"&gt;
+          &lt;a href="#"&gt;{this.props.email}&lt;/a&gt;
+          &lt;ul className="dropdown"&gt;
+            &lt;li&gt;&lt;a href='#' onClick={this.logout}&gt;Logout&lt;/a&gt;&lt;/li&gt;
+          &lt;/ul&gt;
+        &lt;/li&gt; 
+      &lt;/ul&gt;
+    ) : (
+      &lt;ul className="right"&gt;
+        &lt;li&gt;&lt;Link to="login"&gt;Login&lt;/Link&gt;&lt;/li&gt;
+        &lt;li&gt;&lt;Link to="signup"&gt;Sign up&lt;/Link&gt;&lt;/li&gt;
+      &lt;/ul&gt;
+    );
+
+    var leftNav = this.props.isLoggedIn ? (
+      &lt;ul className="left"&gt;
+        &lt;li&gt;&lt;Link to="new-story"&gt;New story&lt;/Link&gt;&lt;/li&gt;
+      &lt;/ul&gt;
+    ) : (
+      &lt;div&gt;&lt;/div&gt;
+    );
+
+    return (
+      &lt;nav className="top-bar" data-topbar role="navigation"&gt;
+        &lt;ul className="title-area"&gt;
+          &lt;li className="name"&gt;
+            &lt;h1&gt;&lt;a href="#"&gt;&lt;strong&gt;S&lt;/strong&gt;&lt;/a&gt;&lt;/h1&gt;
+          &lt;/li&gt;
+          &lt;li className="toggle-topbar menu-icon"&gt;&lt;a href="#"&gt;&lt;span&gt;Menu&lt;/span&gt;&lt;/a&gt;&lt;/li&gt;
+        &lt;/ul&gt;
+
+        &lt;section className="top-bar-section"&gt;
+          {rightNav}
+          {leftNav}
+        &lt;/section&gt;
+      &lt;/nav&gt;
+    );
+  }
+});
+
+module.exports = Header;
+</code></pre>
+
+<p>As you can see we are finally defining our markup. Within this markup you might notice a couple of calls within curly braces, that references <code>this.props</code>. This object is filled with the properties declared in the previous component, so that&rsquo;s how a parent can forward informations down the chain of its child components. No more two way bindings, the data just flows from the root to the leaves. Also, React offers the ability to validate the props, by specifying the <code>propTypes</code>. Whenever we pass a prop to a component, React checks the data type, and raises a JS warning in the inspector&rsquo;s console. That&rsquo;s a handy debugging tool that improves the reusability of a single component.<br/>
+It&rsquo;s apparent how we are defining our views in a declarative way. Once defined we are not handling the state with a barrage of spaghetti jQuery calls, we keep in mind that the view will get refreshed down the line.</p>
+
+<p>It does look convolute at first, right? The Flux architecture becomes awesome once you realise that <em>every</em> interaction follows the same principle, then everything clicks in your brain. Noticed the <code>logout</code> function in the Header? It doesn&rsquo;t make a reference to the SessionStore, the Header doesn&rsquo;t even know it exists, it just follows a pattern: &ldquo;<em>when something happens, create an action</em>&rdquo;.<br/>
+The code is decoupled, the responsabilities are separated, we can achieve modularity and reusability. For real this time. Brilliant.</p>
+
+<h2>LoginPage</h2>
+
+<p>We covered the server action, but we still need to let the user perform the login action. Let&rsquo;s fix that. You might have guessed it: we&rsquo;ll create a React component that will fire and action when the user submits the form.</p>
+
+<pre><code class="js">// ./scripts/component/session/LoginPage.react.jsx
+var React = require('react');
+var SessionActionCreators = require('../../actions/SessionActionCreators.react.jsx');
+var SessionStore = require('../../stores/SessionStore.react.jsx');
+var ErrorNotice = require('../../components/common/ErrorNotice.react.jsx');
+
+var LoginPage = React.createClass({
+  getInitialState: function() {
+    return { errors: [] };
+  },
+
+  componentDidMount: function() {
+    SessionStore.addChangeListener(this._onChange);
+  },
+
+  componentWillUnmount: function() {
+    SessionStore.removeChangeListener(this._onChange);
+  },
+
+  _onChange: function() {
+    this.setState({ errors: SessionStore.getErrors() });
+  },
+
+  _onSubmit: function(e) {
+    e.preventDefault();
+    this.setState({ errors: [] });
+    var email = this.refs.email.getDOMNode().value;
+    var password = this.refs.password.getDOMNode().value;
+    SessionActionCreators.login(email, password);
+  },
+
+  render: function() {
+    var errors = (this.state.errors.length &gt; 0) ? &lt;ErrorNotice errors={this.state.errors}/&gt; : &lt;div&gt;&lt;/div&gt;;
+    return (
+      &lt;div&gt;
+        {errors}
+        &lt;div className="row"&gt;
+          &lt;div className="card card--login small-10 medium-6 large-4 columns small-centered"&gt;
+            &lt;form onSubmit={this._onSubmit}&gt;
+              &lt;div className="card--login__field"&gt;
+                &lt;label name="email"&gt;Email&lt;/label&gt;
+                &lt;input type="text" name="email" ref="email" /&gt; 
+              &lt;/div&gt;
+              &lt;div className="card--login__field"&gt;
+                &lt;label name="password"&gt;Password&lt;/label&gt;
+                &lt;input type="password" name="password" ref="password" /&gt;
+              &lt;/div&gt;
+              &lt;button type="submit" className="card--login__submit"&gt;Login&lt;/button&gt;
+            &lt;/form&gt;
+          &lt;/div&gt;
+        &lt;/div&gt;
+      &lt;/div&gt;
+    );
+  }
+});
+
+module.exports = LoginPage;
+</code></pre>
+
+<p>As you can see we have our boilerplate declaration of the change callback at the start of the file, that&rsquo;s pretty common. You might also notice that this component has its own state, unlike the Header. This is because I felt that the login error (retrieved by the SessionStore) belongs in the page itself, since it&rsquo;ll be rendered there, and there&rsquo;s no need to let it have a broader scope by integrating it as a state in the main <code>SmallApp</code> component.<br/>
+Getting back to the login process, the render function defines the markup of our login form, and on submit the component will retrieve email and password, and create a new action with them. That&rsquo;s it.</p>
+
+<h1>Next up</h1>
+
+<p>It might be a good time to take another break, in the next part we&rsquo;ll go through listing and posting a new story in our app, and then it&rsquo;s conclusions time. I&rsquo;ll see you soon.</p>
+
+<p><a href="/blog/2015/01/30/react-plus-flux-backed-by-rails-api-part-3/">Part 3</a></p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[React + Flux backed by Rails API - Part 1]]></title>
+    <link href="http:///blog/2015/01/28/react-plus-flux-backed-by-rails-api/"/>
+    <updated>2015-01-28T16:04:00+01:00</updated>
+    <id>http:///blog/2015/01/28/react-plus-flux-backed-by-rails-api</id>
+    <content type="html"><![CDATA[<p>I&rsquo;ve been working on a frontend for a project we are developing here at Fancy Pixel. We are embracing what looks like a good habit: slicing what would be a monolithic Rails app in a lightweight backend serving APIs and a frontend consuming them. We did this in the not so distant past using Angular.js. It was all fine and dandy, until it wasn&rsquo;t. There&rsquo;s something about it that doesn&rsquo;t sit right with me, I wouldn&rsquo;t go in detail, since many others already did, but let&rsquo;s just say that there&rsquo;s too much magic involved for my tastes (says the guy using Rails). Magic is fine as long as I can figure out how to tinker with the internals when things go down south. With Angular the effort seems too much, but that&rsquo;s just personal taste really. Also I can&rsquo;t deny that the major structural changes introduced in 2.0 were the last nail in the coffin.<br/>
+I wanted to try something new, something that would enforce a solid architecture of our apps, letting me control the single cogs in the engine. React got a lot of good press in the past months, so I took the chance to dive in. In this three-part post you&rsquo;ll find pretty much everything I learned by writing a frontend using React, with a vanilla Flux architecture, consuming an API written in Rails.</p>
+
+<!-- More -->
+
+
+<h2>Choosing the backend</h2>
+
+<p>Given our experience, the obvious choice for us was Rails, but with a twist: <a href="https://github.com/rails-api/rails-api">rails-api</a>. Rails-api is a stripped down version of Rails, where most of the &lsquo;<em>useless</em>&rsquo; middleware is not included (but you can include it might you need it). Using Rails to serve JSON might seem overkill to most, but the Github page of rails-api has some really good points to counter this argument, and I think they are spot on.
+TL;DR version: Rails is awesome, let&rsquo;s take advantage of that.</p>
+
+<h2>The frontend technology</h2>
+
+<p>React is javascript library for building user interfaces built and open sourced by the Facebook&rsquo;s engineers. Its major selling point is the ability to provide a dynamic and fast way to build isomorphic apps.<br/>
+Isomorphic means that the app can be rendered with ease on both the server and the client, which helps with SEO.<br/>
+Personally, I couldn&rsquo;t care less about SEO, even if I understand how important it is&hellip; I was really sold on React by the Virtual DOM and how the data is organized and handled in React views.
+The Virtual DOM is something that we&rsquo;re going to see implemented in other JS frameworks (Ember does that already if I&rsquo;m not mistaken). The views can be rendered on the server for the initial request, than the underlying tech is going to render subsequent pages in a Virtual DOM, that is then diffed with the actual DOM, and then only the differences are changes in the visible page. And it&rsquo;s fast. Brilliant. This enables us to start writing frontend like we used way back: in a declarative way&hellip; we just specify how the UI should look, when data changes React takes care of the page refresh, changing only the parts that need to be changed.</p>
+
+<h2>Flux</h2>
+
+<p>This covers the backend and the views, we&rsquo;re missing something in between, say, an architecture to follow. Flux is an architecture for building web UIs, and works really well in combination with React (but it can really be applied anywhere).</p>
+
+<h2>Here comes trouble</h2>
+
+<p>I never was a big fan of implementing web UI, CSS always gets messy, Javascript files become scary monoliths where crappy code goes to die, while developers test their spelunker skills and loose their sanity. Maybe I&rsquo;m just crap, but even using Sass and Coffeescript never really solved my issues.<br/>
+I was excited to try something really new, but I knew that getting started with such a joung technology would end up being a major pain in the ass. <br/>
+Case and point, learning and starting being productive (i.e.: writing usable code) took a fair bit of head scratching. There&rsquo;s still no clear &ldquo;best practice&rdquo; to perform common tasks, nor a clear starting configuration. Let&rsquo;s put it that way, if you come from the RoR world, where convention over configuration greatly reduces boilerplating and &ldquo;forces&rdquo; you to follow commonly established best practice, you&rsquo;re going to struggle with Flux.
+This post will cover the solutions we came up with, they may not be perfect, but I&rsquo;m fairly sure there are no anti-patterns in there, and they are a solid starting point.</p>
+
+<h1>Getting it all toghether</h1>
+
+<p>Let&rsquo;s start writing some code. We&rsquo;ll go through a simple Rails app that will feature user signup and login, and the ability to post a story. Just like a tiny Medium. Let&rsquo;s appropriately call it <em>Small</em>.</p>
+
+<p>Feel free to skip the Railsy part if you&rsquo;re only interested in Flux and React and jump to <a href="/blog/2015/01/29/react-plus-flux-backed-by-rails-api-part-2/">Part 2</a>.</p>
+
+<h1>Rails API</h1>
+
+<p>A while ago I stumbled upon <a href="http://slides.com/alanpeabody/breaking-up-with-the-asset-pipeline#/">this article</a> by Alan Peabody. I had a similar experience as him, you start working ona project, you use the right tools, you do your best to enforce good patterns, but in the end the frontend code just becomes scary, something no one wants to maintain. Let&rsquo;s break up with the asset pipeline, as the title says, and work towards making Rails beautiful again.
+We&rsquo;ll be using the rails-api gem for this task. You can generate a new app with its CLI command, or you can integrate it later. I&rsquo;ll do the later option, no reason really, just a habit.</p>
+
+<pre><code>rails new small
+</code></pre>
+
+<p>Next we&rsquo;ll add <code>rails-api</code>, <code>devise</code>, <code>active_model_serializers</code> gems to our Gemfile, and while we are at it we can remove all the gems that generate assets or view content, <code>jbuilder</code> included. Our Gemfile should look like this (test section omitted):</p>
+
+<pre><code class="ruby">source 'https://rubygems.org'
+
+gem 'rails', '4.2.0'
+gem 'rails-api', '~&gt; 0.4.0'
+gem 'active_model_serializers', '~&gt; 0.8.3' # NOTE: not the 0.9
+gem 'devise', '~&gt; 3.4.1'
+gem 'sqlite3'
+gem 'sdoc', '~&gt; 0.4.0', group: :doc
+gem 'thin'
+
+group :development, :test do
+  gem 'faker'
+  gem 'byebug'
+  gem 'web-console', '~&gt; 2.0'
+  gem 'spring'
+end
+</code></pre>
+
+<p>Now we need to change the application controller so that it inherits from <code>ActionController::API</code>, and kiss the <code>protect_from_forgery</code> goodbye. Since we are serving only JSON, it makes sense to add</p>
+
+<pre><code class="ruby">respond_to :json
+</code></pre>
+
+<p>to the applciation controller, helps DRYing all out. While we are at it, we might as well delete the assets and views folders, we won&rsquo;t need them.</p>
+
+<h2>Authentication</h2>
+
+<p>Should I first define a resource? Maybe, but that&rsquo;s trivial, let&rsquo;s get the authentication out of the way. We are building an API, so no session will be involved, we have to authenticate the user in each request. I&rsquo;ll be using <a href="http://oauthlib.readthedocs.org/en/latest/oauth2/grants/password.html">Oauth2 Resource Owner Password Credentials Grant</a> which sounds fancy, but it&rsquo;s really just a token in the request header that authenticates the caller.<br/>
+The gem Devise used to implement a <code>token_authenticatable</code> strategy, but it was pulled for security reason. There are gems that implement the strategy (like Doorkeeper), but since it&rsquo;s fairly easy to implement I&rsquo;ll do it for myself. Let&rsquo;s install Devise first by adding it in the Gemfile and launching <code>rails generate devise:install</code> after a <code>bundle install</code>, then we create the user model:</p>
+
+<pre><code>rails generate devise User
+</code></pre>
+
+<h2>Token authentication</h2>
+
+<p>Token authentication was removed from Devise a couple of years ago, <a href="http://blog.plataformatec.com.br/2013/08/devise-3-1-now-with-more-secure-defaults/">this link</a> explains why. We have to implement it for ourselves, but it&rsquo;s quite easy. The token will be composed of two informations: the user&rsquo;s id followed by the token itself, separated by a <code>:</code>. We&rsquo;ll be using the user&rsquo;s database id for this sample, for semplicity&rsquo;s sake, but it&rsquo;s obviously not a smart thing to do.
+First things first, we&rsquo;ll add an <code>access_token</code> to the user (and a username too):</p>
+
+<pre><code class="ruby">class AddAccessTokenToUser &lt; ActiveRecord::Migration
+  def change
+    add_column :users, :access_token, :string
+    add_column :users, :username, :string
+  end
+end
+</code></pre>
+
+<p>and here&rsquo;s the User model:</p>
+
+<pre><code class="ruby"># app/models/user.rb
+class User &lt; ActiveRecord::Base
+  devise :database_authenticatable, :recoverable, :validatable
+
+  after_create :update_access_token!  
+
+  validates :username, presence: true
+  validates :email, presence: true
+
+  private
+
+  def update_access_token!
+    self.access_token = "#{self.id}:#{Devise.friendly_token}"
+    save
+  end
+
+end
+</code></pre>
+
+<p>The user authentication will sit in the application controller:</p>
+
+<pre><code class="ruby"># app/controllers/application_controller.rb
+class ApplicationController &lt; ActionController::API
+  include AbstractController::Translation
+
+  before_action :authenticate_user_from_token!
+
+  respond_to :json
+
+  ## 
+  # User Authentication
+  # Authenticates the user with OAuth2 Resource Owner Password Credentials Grant
+  def authenticate_user_from_token!
+    auth_token = request.headers['Authorization']
+
+    if auth_token
+      authenticate_with_auth_token auth_token
+    else
+      authentication_error
+    end
+  end
+
+  private
+
+  def authenticate_with_auth_token auth_token 
+    unless auth_token.include?(':')
+      authentication_error
+      return
+    end
+
+    user_id = auth_token.split(':').first
+    user = User.where(id: user_id).first
+
+    if user &amp;&amp; Devise.secure_compare(user.access_token, auth_token)
+      # User can access
+      sign_in user, store: false
+    else
+      authentication_error
+    end
+  end
+
+  ## 
+  # Authentication Failure
+  # Renders a 401 error
+  def authentication_error
+    # User's token is either invalid or not in the right format
+    render json: {error: t('unauthorized')}, status: 401  # Authentication timeout
+  end
+end
+</code></pre>
+
+<p>We conclude the auth process by providing the routes and the session controller:</p>
+
+<pre><code class="ruby"># config/routes.rb
+Rails.application.routes.draw do
+  devise_for :user, only: []
+
+  namespace :v1, defaults: { format: :json } do
+    resource :login, only: [:create], controller: :sessions
+  end
+end
+</code></pre>
+
+<p>and the session controller:</p>
+
+<pre><code class="ruby"># app/controllers/v1/sessions_controller.rb
+module V1
+  class SessionsController &lt; ApplicationController
+    skip_before_action :authenticate_user_from_token!
+
+    # POST /v1/login
+    def create
+      @user = User.find_for_database_authentication(email: params[:username])
+      return invalid_login_attempt unless @user
+
+      if @user.valid_password?(params[:password])
+        sign_in :user, @user
+        render json: @user, serializer: SessionSerializer, root: nil
+      else
+        invalid_login_attempt
+      end
+    end
+
+    private
+
+    def invalid_login_attempt
+      warden.custom_failure!
+      render json: {error: t('sessions_controller.invalid_login_attempt')}, status: :unprocessable_entity
+    end
+
+  end
+end
+</code></pre>
+
+<p>The SessionSerializer is an Active Model Serializer object, something like this:</p>
+
+<pre><code class="ruby"># app/serializers/v1/session_serializer.rb
+module V1
+  class SessionSerializer &lt; ActiveModel::Serializer
+
+    attributes :email, :token_type, :user_id, :access_token
+
+    def user_id
+      object.id
+    end
+
+    def token_type
+      'Bearer'
+    end
+
+  end
+end
+</code></pre>
+
+<p>That&rsquo;s it. Migrate, run the server, and create a user via the console. You should get something like this:</p>
+
+<pre><code>$ curl localhost:3002/v1/login --data "username=user@example.com&amp;password=password"
+{
+  "token_type": "Bearer",
+  "user_id": 1,
+  "access_token": "1:MPSMSopcQQWr-LnVUySs"
+}
+</code></pre>
+
+<h2>Creating a resource</h2>
+
+<p>I won&rsquo;t go in detail here, the task is just plain RoR. We&rsquo;ll create a Story resource and a controller that will handle the user creation. You&rsquo;ll find the complete rails app in <a href="https://github.com/FancyPixel/small-rails">this repo</a>. Moving on.</p>
+
+<h2>CORS</h2>
+
+<p>It&rsquo;s worth noting that the UI now will not be served by rails, it might even sit in a different server. There are solution that let us keep both UI and API on the same domain, but for now we will need to enable Cross-origin resource sharing (<a href="http://en.wikipedia.org/wiki/Cross-origin_resource_sharing">CORS</a>). We can do this by adding the <a href="https://github.com/cyu/rack-cors">rack-cors gem</a> to our Gemfile and then add this in our <code>config/application.rb</code>:</p>
+
+<pre><code class="ruby">config.middleware.insert_before 'Rack::Runtime', 'Rack::Cors' do
+  allow do
+    origins '*'
+    resource '*',
+             headers: :any,
+             methods: [:get, :put, :post, :patch, :delete, :options]
+  end
+end
+</code></pre>
+
+<p>This opens up to every domain, so thread lightly.</p>
+
+<h2>Next up</h2>
+
+<p>That&rsquo;s it for the Rails part. It&rsquo;s such a joy writing just the API in Rails. It&rsquo;s easier to test, easier to maintain and it&rsquo;s blazing fast. Now we&rsquo;ll proceed with the frontend.
+For readability&rsquo;s sake I&rsquo;ll split the article here, jump to Part 2 to start building the frontend.</p>
+
+<p><a href="/blog/2015/01/29/react-plus-flux-backed-by-rails-api-part-2/">Part 2</a></p>
+]]></content>
+  </entry>
+  
+</feed>

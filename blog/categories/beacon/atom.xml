@@ -1,0 +1,196 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: beacon | Fancy Pixel]]></title>
+  <link href="http:///blog/categories/beacon/atom.xml" rel="self"/>
+  <link href="http:///"/>
+  <updated>2015-04-13T21:41:46+02:00</updated>
+  <id>http:///</id>
+  <author>
+    <name><![CDATA[Fancy Pixel]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Fun with iBeacon]]></title>
+    <link href="http:///blog/2014/07/01/fun-with-ibeacon/"/>
+    <updated>2014-07-01T20:47:00+02:00</updated>
+    <id>http:///blog/2014/07/01/fun-with-ibeacon</id>
+    <content type="html"><![CDATA[<p>You probably know already what <a href="https://developer.apple.com/library/ios/documentation/userexperience/conceptual/LocationAwarenessPG/RegionMonitoring/RegionMonitoring.html">iBeacon</a> is, but just to reiterate, iBeacon is the Apple way of saying Bluetooth 4 Low Energy. At the cost of sounding like a mindless drone, by &lsquo;the Apple way of&rsquo; I mean &lsquo;it just works and shows a lot of potential&rsquo;. An iBeacon is a simple B4LE device that keeps broadcasting its presence. Other B4LE devices can sense when they reach the beacon without draining the battery (hence the LE) and making the user scream in agony. &ldquo;Oook, what do I do with it?&rdquo;. The best thing you can do is locating a user without the GPS, which means locating a user inside a building. The cool thing is that it&rsquo;s fast, it takes seconds to detect a beacon and to react to its vicinity (or lack there of), and it works within the reach of Bluetooth technology (let&rsquo;s say around a 50 meters radius). I should also mention that it works fine with Android too.</p>
+
+<p>This week an <a href="http://estimote.com">Estimote</a> developer kit arrived in our offices, so we took the chance to play around with it.</p>
+
+<!-- More -->
+
+
+<p>I already tried my hand with iBeacons in the not so distant past. Using <a href="https://github.com/lgaches/BeaconEmitter">BeaconEmitter</a> you can easily turn your Mac into a beacon, with no extra hardware required. When I experimented with iBeacons I had a couple of ideas on my mind, that involved being able to send a local notification to the user that enters in range of a device acting as a beacon. My dreams were crushed by the limits of the iOS 7.0 implementation, as I found out that:</p>
+
+<ul>
+<li>you can&rsquo;t react when the user&rsquo;s screen is turned off</li>
+<li>you can&rsquo;t perform any action when your app is in background, even if you request the <code>location</code> background state</li>
+<li>detecting when the user leaves a region takes quite a lot of time (at least 10/15 minutes)</li>
+</ul>
+
+
+<p>The most exciting thing about playing around with the Estimote SDK, besides the nifty packaging and well designed piece of hardware, is that my devices now have iOS 7.1. It turns out that with version 7.1, iOS is way more flexible and it&rsquo;s taking care of all the problems I faced with 7.0:</p>
+
+<ul>
+<li>you can show a local notification when the screen is off</li>
+<li>you can perform operations when the user enters a region (even if the app was killed)</li>
+<li>it takes second to detect when the user is out of range</li>
+</ul>
+
+
+<p>This turns everything around, iBeacons aren&rsquo;t just a gimmick now, but an exciting tool to experiment with.</p>
+
+<h2>Building a sample</h2>
+
+<p>First thing that came to our mind was to build a simple system to automatically check people in and out of the office. Really, as simple as it gets, it took a couple of hours to build, but it works surprisingly well.</p>
+
+<h3>Rails backend</h3>
+
+<p>To check people in and out we need a backend and an authentication system. Rails makes it easy, a model, a basic API and the help of Devise for the authentication process.</p>
+
+<pre><code class="ruby"># app/model/checkin.rb lang:ruby
+class Checkin &lt; ActiveRecord::Base
+
+  belongs_to :user  
+  enum direction: { in: 0, out: 1 }
+
+end
+</code></pre>
+
+<p>That&rsquo;s a pretty basic model, taking advantage of Rails 4.1 enums.</p>
+
+<p>The routes are scoped as APIs, just to be fancy:</p>
+
+<pre><code class="ruby"># config/routes.rb
+namespace :api, defaults: {format: :json} do
+  namespace :v1 do
+    post 'checkin', to: 'checkins#checkin'
+    post 'checkout', to: 'checkins#checkout'
+  end
+end
+</code></pre>
+
+<p>And the controller does pretty much just this:</p>
+
+<pre><code class="ruby"># checkins_controller.rb
+def checkin
+  checkin = Checkin.new(user: current_user, direction: :in)
+  if checkin.save
+    head :no_content
+  else
+    render json: {errors: checkin.errors}, status: :unprocessable_entity
+  end
+end
+</code></pre>
+
+<p>The authentication is handled by Devise, and for simplicity we opted for HTTP Basic Authentication.</p>
+
+<h3>iOS Client</h3>
+
+<p>The iOS app needs to look for our trusty beacon, and once the user is in range of our region, it needs to make a POST call to our API. When the user walks out of the office the phone needs to do the same to the checkout API. The iOS APIs for handling beacons are inside CoreLocation, in this sample I&rsquo;ll be using two main delegate methods:</p>
+
+<pre><code class="objectivec">- (void)locationManager:(CLLocationManager *)manager didEnterRegion:(CLRegion *)region;
+- (void)locationManager:(CLLocationManager *)manager didExitRegion:(CLRegion *)region;
+</code></pre>
+
+<p>The good guy calling these two methods is a <code>CLLocationManager</code> instance. The location manager needs an instance of <code>CLBeaconRegion</code> to start doing its magic though. We can define a region by specifying a UUDID, an identifier, a major and a minor. It might sound confusing at first, but all those things boil down to this:</p>
+
+<ul>
+<li><code>UUDID</code>: A unique identifier of our beacon network. It&rsquo;s best practice to have one UUDID per App. Each beacon will share the same UUDID.</li>
+<li><code>identifier</code>: It&rsquo;s a string representation of our network. It usually is the reverse URI of our App, something along the line of com.something.awesome.</li>
+<li><code>major</code>: It&rsquo;s an integer that specifies the major group of our beacons. Think of it as a common number that can identify a bunch of beacons inside a building.</li>
+<li><code>minor</code>: It&rsquo;s an integer that specifies the single beacon inside of a major group.</li>
+</ul>
+
+
+<p>So our basic config would be one UUDID and identifier per App, one major per building, and one minor per beacon. For the purposes of this sample we only have a beacon, so we can either disregard this info, or just specify whatever major and minor that we want, as long as it matches the ones configured in the beacon itself.
+Now that all that is out of the way, let&rsquo;s get to the code:</p>
+
+<pre><code class="objectivec">- (CLBeaconRegion *)region
+{
+    if (_region == nil) {
+        NSUUID *proximityUUID = [[NSUUID alloc] initWithUUIDString:self.settings[@"udid"]];
+        _region = [[CLBeaconRegion alloc] initWithProximityUUID:proximityUUID
+                                                          major:[self.settings[@"major"] intValue]
+                                                          minor:[self.settings[@"minor"] intValue]
+                                                     identifier:self.settings[@"identifier"]];
+
+        [_region setNotifyOnExit:YES];
+        [_region setNotifyOnEntry:YES];
+        [_region setNotifyEntryStateOnDisplay:YES];
+    }
+    return _region;
+}
+</code></pre>
+
+<p>There we go, our lazy loaded region that reads the parameters from an NSDictionary. Cool, let&rsquo;s start monitoring:</p>
+
+<pre><code class="objectivec">[self.manager startMonitoringForRegion:self.region];
+[self.manager stopRangingBeaconsInRegion:self.region];  
+</code></pre>
+
+<p>The first line is pretty self explanatory, the second one just tells the system that I don&rsquo;t really care for the single beacons, I just need the region updates.</p>
+
+<p>Now that we are monitoring the region, we just need to decide what to do when we are in and out of range:</p>
+
+<pre><code class="objectivec">- (void)locationManager:(CLLocationManager *)manager didEnterRegion:(CLRegion *)region
+{
+    if ([region isKindOfClass:[CLBeaconRegion class]]) {
+        CLBeaconRegion *beaconRegion = (CLBeaconRegion *)region;
+        if ([beaconRegion.identifier isEqualToString:self.settings[@"identifier"]] &amp;&amp; [beaconRegion.major intValue] == [self.settings[@"major"] intValue] &amp;&amp; [beaconRegion.minor intValue]== [self.settings[@"minor"] intValue]) {
+            UILocalNotification *notification = [[UILocalNotification alloc] init];
+            notification.userInfo = @{@"identifier": region.identifier};
+            notification.alertBody = [NSString stringWithFormat:@"Entering %@", region.identifier];
+            notification.soundName = @"Default";
+            [[UIApplication sharedApplication] presentLocalNotificationNow:notification];
+            [self remoteCheckin:FPCheckDirectionIn];
+        }
+    }
+}
+
+- (void)locationManager:(CLLocationManager *)manager didExitRegion:(CLRegion *)region
+{
+    if ([region isKindOfClass:[CLBeaconRegion class]]) {
+        CLBeaconRegion *beaconRegion = (CLBeaconRegion *)region;
+        if ([beaconRegion.identifier isEqualToString:self.settings[@"identifier"]] &amp;&amp; [beaconRegion.major intValue] == [self.settings[@"major"] intValue] &amp;&amp; [beaconRegion.minor intValue]== [self.settings[@"minor"] intValue]) {
+            UILocalNotification *notification = [[UILocalNotification alloc] init];
+            notification.userInfo = @{@"identifier": region.identifier};
+            notification.alertBody = [NSString stringWithFormat:@"Exiting %@", region.identifier];
+            notification.soundName = @"Default";
+            [[UIApplication sharedApplication] presentLocalNotificationNow:notification];
+            [self remoteCheckin:FPCheckDirectionOut];
+        }
+    }
+}
+</code></pre>
+
+<p>As you can see, we&rsquo;re just checking against our beacon, when we are in range or when we get out of range, we push a local notification and we perform a remote call to our Rails backend. You can find the full source on our Github account, don&rsquo;t worry.</p>
+
+<h2>Who&rsquo;s Fancy?</h2>
+
+<p>And there we go, the iOS app:</p>
+
+<p>{% img center /images/posts/2014-07-01/iOS.png &lsquo;Who&rsquo;s Fancy iOS&rsquo; %}</p>
+
+<p>and the web page:</p>
+
+<p>{% img center /images/posts/2014-07-01/rails.png &lsquo;Who&rsquo;s Fancy Rails&rsquo; %}</p>
+
+<p>You can find the rails and iOS code <a href="https://github.com/FancyPixel/whosfancy-rails">here</a> and <a href="https://github.com/FancyPixel/whosfancy-ios">here</a>.</p>
+
+<h4>Android version</h4>
+
+<p>We also pushed the Android version on our Github page, you can find it <a href="https://github.com/FancyPixel/whosfancy-android">here</a>.</p>
+
+<p>Until next time.</p>
+
+<p>Andrea</p>
+]]></content>
+  </entry>
+  
+</feed>

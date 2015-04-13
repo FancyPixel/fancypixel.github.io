@@ -1,0 +1,471 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: ios | Fancy Pixel]]></title>
+  <link href="http:///blog/categories/ios/atom.xml" rel="self"/>
+  <link href="http:///"/>
+  <updated>2015-04-13T21:41:46+02:00</updated>
+  <id>http:///</id>
+  <author>
+    <name><![CDATA[Fancy Pixel]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[Gulps: new open source WatchKit app]]></title>
+    <link href="http:///blog/2015/04/13/gulps-new-open-source-watchkit-app/"/>
+    <updated>2015-04-13T21:26:20+02:00</updated>
+    <id>http:///blog/2015/04/13/gulps-new-open-source-watchkit-app</id>
+    <content type="html"><![CDATA[<p>We released a new app on the <a href="https://itunes.apple.com/us/app/gulps/id979057304?ls=1&amp;mt=8">AppStore</a> and decided to open source it. The app is called Gulps, a simple tracker of your daily water consumption. Gulps was a fun little side project built to learn a bit more about WatchKit and to strengthen my Swift-fu.<br/>
+If you read our latest post on <a href="http://fancypixel.github.io/blog/2015/03/29/share-data-between-watchkit-and-your-app-with-realm/">how to share data with Realm</a>, you&rsquo;ll find a lot of code in common in this app, but there&rsquo;s also quite a bit of new stuff that&rsquo;s worth checking out. For starters I personally really like the water meter that follows your device movement, made possible by the amazing <a href="https://github.com/dulaccc/DPMeterView">DPMeterView</a>. You might also like the Facebook Paper-like wavy effect, provided by one of my pride and joys, <a href="https://github.com/andreamazz/AMWaveTransition">AMWaveTransition</a>.<br/>
+You&rsquo;ll find the source <a href="https://github.com/FancyPixel/gulps">here</a>.</p>
+
+<p>Let us know what you think.<br/>
+Until next time.</p>
+
+<p>Andrea - <a href="https://twitter.com/theandreamazz">@theandreamazz</a></p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Share data between WatchKit and your app with Realm]]></title>
+    <link href="http:///blog/2015/03/29/share-data-between-watchkit-and-your-app-with-realm/"/>
+    <updated>2015-03-29T15:00:32+02:00</updated>
+    <id>http:///blog/2015/03/29/share-data-between-watchkit-and-your-app-with-realm</id>
+    <content type="html"><![CDATA[<p>It&rsquo;s been a busy year for iOS developers. We got a slew of new toys to play with: a new version of iOS, new frameworks, a new language, new screen sizes and some new hardware to put on our wrists, just as soon as we thought that watches were anachronistic.<br/>
+New technology is always exciting, but keeping up to date can be a daunting task when deadlines keep getting closer. Lately I&rsquo;ve been taking some time off to delve deeper in these new topics and build a simple app out of it (that we are planning to open source). At the time of this writeup the app is still waiting to be reviewed, so we&rsquo;re going to just focus on something that I learned in the process and that can be useful to a lot of other iOS devs: sharing data between your app and its WatchKit extension, using <a href="http://realm.io/">Realm</a>.</p>
+
+<!-- More -->
+
+
+<h1>Why Realm</h1>
+
+<p>Realm is a great replacement for both SQLite and Core Data, it offers a quick and painless way to persist data in your iOS (and Android) app. The thing that makes it so great is the ease of use, it reduces your boilerplate code to next to nothing (I&rsquo;m watching you, Core Data), keeping things at a high level of abstraction (I&rsquo;m watching you SQLite) and&hellip; it&rsquo;s fast. It really is a brilliant piece of software, and I urge you to checkout the <a href="http://realm.io/docs/cocoa/0.91.1/">official documentation</a> if you&rsquo;re in need of a persistence framework for your app.</p>
+
+<h1>The sample app</h1>
+
+<p>We&rsquo;re going to learn how to share data between an app and its WatchKit extension, and what better way to use a sample app as reference?.
+I&rsquo;m not a fan of TODO app demos, they always feel&hellip; unimaginative&hellip; but I have to admit that they are the perfect sample for a task like this. So, bear with me, let me introduce to you another TODO sample app: <em>Done!</em>, a simple TODO list where we can add items and mark them as done from our Apple Watch.</p>
+
+<h1>Setting up Realm</h1>
+
+<p>WatchKit extensions are just another target inside your app, just like Today extensions, so they are packed alongside your app, but they have their own life, and most importantly, their own bundle identifier. This means that data stored within an app is not visible to the extension and vice versa. Apple offers a way to solve the issue through app groups.<br/>
+App groups, like bundle identifiers, are defined by a reverse URI and they are prefixed with <code>group.</code>. They let you share data between your apps and are tightly bound to your provisioning profile (luckily Xcode handles their creation in your developer portal with ease).<br/>
+We can take advantage of that to create our Realm database in a shared space that will be visible (and writeable) by both our app and the app&rsquo;s WatchKit extension. Let&rsquo;s start by creating the group in our project&rsquo;s capabilities section:</p>
+
+<p>{% img center /images/posts/2015-03-29/appgroup.png 640 150 &lsquo;App groups&rsquo; %}</p>
+
+<p>Once this is out of the way we can tell Realm to store the database inside the group.
+We&rsquo;ll do so in our AppDelegate&rsquo;s <code>application(application: didFinishLaunchingWithOptions launchOptions:)</code> function:</p>
+
+<pre><code>let directory: NSURL = NSFileManager.defaultManager().containerURLForSecurityApplicationGroupIdentifier("group.it.fancypixel.Done")!
+let realmPath = directory.path!.stringByAppendingPathComponent("db.realm")
+RLMRealm.setDefaultRealmPath(realmPath)
+</code></pre>
+
+<p>That&rsquo;s it, Realm is ready to go, we just need to define a model to persist. Let&rsquo;s do it:</p>
+
+<pre><code>// Entry.swift
+import Realm
+
+class Entry: RLMObject {
+  dynamic var title = ""
+  dynamic var completed = false
+}
+</code></pre>
+
+<h1>ViewController</h1>
+
+<p>The ViewController handling the TODO list will be rather simple, it&rsquo;ll hold a plain <code>UITableView</code> with a custom header presenting the <code>UITextField</code> for the user&rsquo;s input, nothing fancy:</p>
+
+<pre><code>// ViewController.swift
+import Realm
+import UIKit
+
+class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSource, UITextFieldDelegate {
+
+    @IBOutlet var tableView: UITableView!
+    var dataSource: RLMResults!
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        reloadEntries()
+    }
+
+    func tableView(tableView: UITableView, viewForHeaderInSection section: Int) -&gt; UIView? {
+        let container = UIView(frame: CGRectMake(0, 0, self.view.frame.size.width, 60))
+        let textField = UITextField(frame: CGRectMake(10, 10, self.view.frame.size.width - 20, 40))
+        textField.delegate = self
+        textField.textColor = UIColor.whiteColor()
+        let placeholer = NSAttributedString(string: "Add an item", attributes: [NSForegroundColorAttributeName: UIColor.lightGrayColor()])
+        textField.attributedPlaceholder = placeholer
+        container.addSubview(textField)
+        return container
+    }
+
+    func reloadEntries() {
+        dataSource = Entry.allObjects()
+        self.tableView.reloadData()
+    }
+
+    func textFieldShouldReturn(textField: UITextField) -&gt; Bool {
+        textField.resignFirstResponder()
+
+        let realm = RLMRealm.defaultRealm()
+        realm.beginWriteTransaction()
+        let entry = Entry()
+        entry.title = textField.text
+        entry.completed = false
+        realm.addObject(entry)
+        realm.commitWriteTransaction()
+        reloadEntries()
+        return true
+    }
+
+    func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -&gt; Int {
+        return Int(dataSource.count)
+    }
+
+    func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -&gt; UITableViewCell {
+        var cell = tableView.dequeueReusableCellWithIdentifier("Cell") as UITableViewCell
+        let entry = dataSource[UInt(indexPath.row)] as Entry
+        cell.textLabel!.text = entry.title
+        cell.accessoryType = entry.completed ? .Checkmark : .None
+        return cell
+    }
+
+    func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
+        let entry = dataSource[UInt(indexPath.row)] as Entry
+        let realm = RLMRealm.defaultRealm()
+        realm.beginWriteTransaction()
+        entry.completed = !entry.completed
+        realm.commitWriteTransaction()
+        reloadEntries()
+    }
+}
+</code></pre>
+
+<p>As you can see we are retrieving the table view&rsquo;s items from Realm with a simple call:</p>
+
+<pre><code>Entry.allObjects()
+</code></pre>
+
+<p>and storing the changes with a couple of lines:</p>
+
+<pre><code>realm.beginWriteTransaction()
+let entry = Entry
+entry.title = textField.text
+entry.completed = false
+realm.addObject(entry)
+realm.commitWriteTransaction()
+</code></pre>
+
+<p>If you worked with Core Data in the past you should have a better understanding of my claim <em>&ldquo;less boilerplate code&rdquo;</em>.</p>
+
+<h1>WatchKit</h1>
+
+<p>Ok, new technology, new framework, so much to learn, right?<br/>
+Well, it turns out that Apple did some thinking on this, and for what I witnessed, developing a Watch app is going to feel familiar for a lot of Cocoa and Cocoa Touch developers, albeit with some significant philosophical changes. First things first, let&rsquo;s create a new target holding the Watch app:</p>
+
+<p>{% img center /images/posts/2015-03-29/newtarget.png 640 340 &lsquo;WatchKit target&rsquo; %}</p>
+
+<p>Then, the layout. We won&rsquo;t be using Autolayout, but something reminiscing a simplified version of Android&rsquo;s linear and relative layouts (no need to touch beefy XML files though, storyboards are still there for us). The layout for this will be a <code>WKInterfaceTable</code> with a custom <code>TableRowController</code>, holding a <code>WKInterfaceImage</code> and a <code>WKInterfaceLabel</code>:</p>
+
+<p>{% img center /images/posts/2015-03-29/storyboard.png 600 260 &lsquo;WatchKit storyboard&rsquo; %}</p>
+
+<p>The custom <code>TableRowController</code> is a plain class with a couple of properties, so let&rsquo;s take a look at this first:</p>
+
+<pre><code>class EntryTableRowController: NSObject {
+    @IBOutlet var imageCheck: WKInterfaceImage!
+    @IBOutlet var textLabel: WKInterfaceLabel!
+}
+</code></pre>
+
+<p>Pretty straightforward, think of it as the equivalent of a custom <code>UITableViewCell</code>.<br/>
+Let&rsquo;s take a look on how to populate the table:</p>
+
+<pre><code>override func awakeWithContext(context: AnyObject?) {
+    super.awakeWithContext(context)
+
+    let directory: NSURL = NSFileManager.defaultManager().containerURLForSecurityApplicationGroupIdentifier("group.it.fancypixel.Done")!
+    let realmPath = directory.path!.stringByAppendingPathComponent("db.realm")
+    RLMRealm.setDefaultRealmPath(realmPath)
+    reloadTableData()
+}
+
+func reloadTableData() {
+    let realm = RLMRealm.defaultRealm()
+    let dataSource = Entry.allObjects()
+
+    watchTable.setNumberOfRows(Int(dataSource.count), withRowType: "EntryRow")
+
+    for index in 0..&lt;Int(dataSource.count) {
+        let entry = dataSource[UInt(index)] as Entry
+        if let row = watchTable.rowControllerAtIndex(index) as? EntryTableRowController {
+            row.textLabel.setText(entry.title)
+            let imageName = entry.completed ? "check-completed" : "check-empty"
+            row.imageCheck.setImageNamed(imageName)
+        }
+    }
+}
+</code></pre>
+
+<p>That&rsquo;s a little different from what we&rsquo;re used in UIKit. No <code>delegate</code> nor <code>dataSource</code>, in WatchKit we explicitly define every row before showing the table.<br/>
+Also, as you can see in the <code>awakeWithContext</code> function, we are setting up Realm as we did in the main app. As a side note, the pieces of code that are shared between the two targets (in our case, everything concerning the model) should be moved in a custom framework to avoid code duplication. For the purpose of this sample I opted to duplicate the Realm initialization and shared the model between the two targets, but in a more structured app I would definitely take the framework route.
+If we build and run we can add an item on the phone, and once we reload the app we&rsquo;ll see the same item in the watch extension too.<br/>
+That doesn&rsquo;t feel very responsive though, right? We&rsquo;ll fix that in a bit, but first let&rsquo;s add the ability to mark an item as <em>done</em> from the watch:</p>
+
+<pre><code class="">override func table(table: WKInterfaceTable, didSelectRowAtIndex rowIndex: Int) {
+    let dataSource = Entry.allObjects()
+    let entry = dataSource[UInt(rowIndex)] as Entry
+    let realm = RLMRealm.defaultRealm()
+    realm.beginWriteTransaction()
+    entry.completed = !entry.completed
+    realm.commitWriteTransaction()
+    reloadTableData()
+}
+</code></pre>
+
+<p>That pretty much covers it. Right now it&rsquo;s even more apparent that even if the two apps are communicating, there&rsquo;s no real sense of interaction, since we need to reload the app to see the changes.</p>
+
+<h1>Syncing data</h1>
+
+<p>We need to somehow advertise that our watch app or our main app performed something meaningful. There are <em>official</em> ways to do that, and you can read more about them on <a href="http://natashatherobot.com/watchkit-open-ios-app-from-watch/">this blog post from Natasha The Robot</a>, but in this case I want to show you how a brilliant library called <a href="https://github.com/mutualmobile/MMWormhole">MMWormHole</a> can abstract this task for us.</p>
+
+<h2>MMWormHole</h2>
+
+<p>MMWormhole creates a bridge between an app and its extensions. The API is clear and concise and it has a delightfully geeky name. It works like a pub/sub system, one end registers its interest for a kind of message (defined by a string identifier), and the other end can broadcast a new event. When the event is raised the subscriber&rsquo;s handler is fired. Sounds like something we can leverage from our app. Let&rsquo;s start by registering interest in <code>watch</code> updates on our main app:</p>
+
+<pre><code>self.wormhole.listenForMessageWithIdentifier("watchUpdate", listener: { (_) -&gt; Void in
+    self.reloadEntries()
+})
+</code></pre>
+
+<p>and on our watch app we&rsquo;ll listen for <code>main</code> updates:</p>
+
+<pre><code>self.wormhole.listenForMessageWithIdentifier("mainUpdate", listener: { (_) -&gt; Void in
+    self.reloadTableData()
+})
+</code></pre>
+
+<p>And that&rsquo;s it. When something changes in our model we just need to call these function:</p>
+
+<pre><code>// From the watch
+self.wormhole.passMessageObject("update", identifier: "watchUpdate")
+
+// From the main app
+self.wormhole.passMessageObject(someObject, identifier: "mainUpdate")
+</code></pre>
+
+<h1>Realm notifications</h1>
+
+<p><em>Update</em></p>
+
+<p>Once this post was live, Tim Anglade from Realm reached out to me and was kind enough to point out that there&rsquo;s a built-in notification system in Realm, so MMWormHole in this case isn&rsquo;t really needed. The API is really easy to use and requires no configuration, here&rsquo;s how it works:</p>
+
+<pre><code>realmToken = RLMRealm.defaultRealm().addNotificationBlock { note, realm in
+    self.reloadEntries()
+}
+</code></pre>
+
+<p>As long as we keep a strong pointer to the token, the system fires the notification block as soon as a write transaction is committed. You can find the updated code in the sample app.</p>
+
+<h2>Demo</h2>
+
+<p>Here&rsquo;s the demo app in all of its glory:</p>
+
+<p>{% img center /images/posts/2015-03-29/screenshot.gif 600 &lsquo;Done&rsquo; %}</p>
+
+<p>As you can see it&rsquo;s really easy to bootstrap a simple app for WatchKit, and thanks to a couple of great open source libraries adding persistence and interactivity is a painless effort. A big <em>thank you</em> to both the Realm team and Mutual Mobile for the amazing work on MMWormHole.</p>
+
+<p>As usual, you&rsquo;ll find the source code of the demo app on our <a href="https://github.com/FancyPixel/done-swift">GitHub page</a>. Feel free to leave a comment, we&rsquo;d love to hear your feedback.</p>
+
+<p>Until next time,</p>
+
+<p>Andrea - <em><a href="https://twitter.com/theandreamazz">@theandreamazz</a></em></p>
+]]></content>
+  </entry>
+  
+  <entry>
+    <title type="html"><![CDATA[Fun with iBeacon]]></title>
+    <link href="http:///blog/2014/07/01/fun-with-ibeacon/"/>
+    <updated>2014-07-01T20:47:00+02:00</updated>
+    <id>http:///blog/2014/07/01/fun-with-ibeacon</id>
+    <content type="html"><![CDATA[<p>You probably know already what <a href="https://developer.apple.com/library/ios/documentation/userexperience/conceptual/LocationAwarenessPG/RegionMonitoring/RegionMonitoring.html">iBeacon</a> is, but just to reiterate, iBeacon is the Apple way of saying Bluetooth 4 Low Energy. At the cost of sounding like a mindless drone, by &lsquo;the Apple way of&rsquo; I mean &lsquo;it just works and shows a lot of potential&rsquo;. An iBeacon is a simple B4LE device that keeps broadcasting its presence. Other B4LE devices can sense when they reach the beacon without draining the battery (hence the LE) and making the user scream in agony. &ldquo;Oook, what do I do with it?&rdquo;. The best thing you can do is locating a user without the GPS, which means locating a user inside a building. The cool thing is that it&rsquo;s fast, it takes seconds to detect a beacon and to react to its vicinity (or lack there of), and it works within the reach of Bluetooth technology (let&rsquo;s say around a 50 meters radius). I should also mention that it works fine with Android too.</p>
+
+<p>This week an <a href="http://estimote.com">Estimote</a> developer kit arrived in our offices, so we took the chance to play around with it.</p>
+
+<!-- More -->
+
+
+<p>I already tried my hand with iBeacons in the not so distant past. Using <a href="https://github.com/lgaches/BeaconEmitter">BeaconEmitter</a> you can easily turn your Mac into a beacon, with no extra hardware required. When I experimented with iBeacons I had a couple of ideas on my mind, that involved being able to send a local notification to the user that enters in range of a device acting as a beacon. My dreams were crushed by the limits of the iOS 7.0 implementation, as I found out that:</p>
+
+<ul>
+<li>you can&rsquo;t react when the user&rsquo;s screen is turned off</li>
+<li>you can&rsquo;t perform any action when your app is in background, even if you request the <code>location</code> background state</li>
+<li>detecting when the user leaves a region takes quite a lot of time (at least 10/15 minutes)</li>
+</ul>
+
+
+<p>The most exciting thing about playing around with the Estimote SDK, besides the nifty packaging and well designed piece of hardware, is that my devices now have iOS 7.1. It turns out that with version 7.1, iOS is way more flexible and it&rsquo;s taking care of all the problems I faced with 7.0:</p>
+
+<ul>
+<li>you can show a local notification when the screen is off</li>
+<li>you can perform operations when the user enters a region (even if the app was killed)</li>
+<li>it takes second to detect when the user is out of range</li>
+</ul>
+
+
+<p>This turns everything around, iBeacons aren&rsquo;t just a gimmick now, but an exciting tool to experiment with.</p>
+
+<h2>Building a sample</h2>
+
+<p>First thing that came to our mind was to build a simple system to automatically check people in and out of the office. Really, as simple as it gets, it took a couple of hours to build, but it works surprisingly well.</p>
+
+<h3>Rails backend</h3>
+
+<p>To check people in and out we need a backend and an authentication system. Rails makes it easy, a model, a basic API and the help of Devise for the authentication process.</p>
+
+<pre><code class="ruby"># app/model/checkin.rb lang:ruby
+class Checkin &lt; ActiveRecord::Base
+
+  belongs_to :user  
+  enum direction: { in: 0, out: 1 }
+
+end
+</code></pre>
+
+<p>That&rsquo;s a pretty basic model, taking advantage of Rails 4.1 enums.</p>
+
+<p>The routes are scoped as APIs, just to be fancy:</p>
+
+<pre><code class="ruby"># config/routes.rb
+namespace :api, defaults: {format: :json} do
+  namespace :v1 do
+    post 'checkin', to: 'checkins#checkin'
+    post 'checkout', to: 'checkins#checkout'
+  end
+end
+</code></pre>
+
+<p>And the controller does pretty much just this:</p>
+
+<pre><code class="ruby"># checkins_controller.rb
+def checkin
+  checkin = Checkin.new(user: current_user, direction: :in)
+  if checkin.save
+    head :no_content
+  else
+    render json: {errors: checkin.errors}, status: :unprocessable_entity
+  end
+end
+</code></pre>
+
+<p>The authentication is handled by Devise, and for simplicity we opted for HTTP Basic Authentication.</p>
+
+<h3>iOS Client</h3>
+
+<p>The iOS app needs to look for our trusty beacon, and once the user is in range of our region, it needs to make a POST call to our API. When the user walks out of the office the phone needs to do the same to the checkout API. The iOS APIs for handling beacons are inside CoreLocation, in this sample I&rsquo;ll be using two main delegate methods:</p>
+
+<pre><code class="objectivec">- (void)locationManager:(CLLocationManager *)manager didEnterRegion:(CLRegion *)region;
+- (void)locationManager:(CLLocationManager *)manager didExitRegion:(CLRegion *)region;
+</code></pre>
+
+<p>The good guy calling these two methods is a <code>CLLocationManager</code> instance. The location manager needs an instance of <code>CLBeaconRegion</code> to start doing its magic though. We can define a region by specifying a UUDID, an identifier, a major and a minor. It might sound confusing at first, but all those things boil down to this:</p>
+
+<ul>
+<li><code>UUDID</code>: A unique identifier of our beacon network. It&rsquo;s best practice to have one UUDID per App. Each beacon will share the same UUDID.</li>
+<li><code>identifier</code>: It&rsquo;s a string representation of our network. It usually is the reverse URI of our App, something along the line of com.something.awesome.</li>
+<li><code>major</code>: It&rsquo;s an integer that specifies the major group of our beacons. Think of it as a common number that can identify a bunch of beacons inside a building.</li>
+<li><code>minor</code>: It&rsquo;s an integer that specifies the single beacon inside of a major group.</li>
+</ul>
+
+
+<p>So our basic config would be one UUDID and identifier per App, one major per building, and one minor per beacon. For the purposes of this sample we only have a beacon, so we can either disregard this info, or just specify whatever major and minor that we want, as long as it matches the ones configured in the beacon itself.
+Now that all that is out of the way, let&rsquo;s get to the code:</p>
+
+<pre><code class="objectivec">- (CLBeaconRegion *)region
+{
+    if (_region == nil) {
+        NSUUID *proximityUUID = [[NSUUID alloc] initWithUUIDString:self.settings[@"udid"]];
+        _region = [[CLBeaconRegion alloc] initWithProximityUUID:proximityUUID
+                                                          major:[self.settings[@"major"] intValue]
+                                                          minor:[self.settings[@"minor"] intValue]
+                                                     identifier:self.settings[@"identifier"]];
+
+        [_region setNotifyOnExit:YES];
+        [_region setNotifyOnEntry:YES];
+        [_region setNotifyEntryStateOnDisplay:YES];
+    }
+    return _region;
+}
+</code></pre>
+
+<p>There we go, our lazy loaded region that reads the parameters from an NSDictionary. Cool, let&rsquo;s start monitoring:</p>
+
+<pre><code class="objectivec">[self.manager startMonitoringForRegion:self.region];
+[self.manager stopRangingBeaconsInRegion:self.region];  
+</code></pre>
+
+<p>The first line is pretty self explanatory, the second one just tells the system that I don&rsquo;t really care for the single beacons, I just need the region updates.</p>
+
+<p>Now that we are monitoring the region, we just need to decide what to do when we are in and out of range:</p>
+
+<pre><code class="objectivec">- (void)locationManager:(CLLocationManager *)manager didEnterRegion:(CLRegion *)region
+{
+    if ([region isKindOfClass:[CLBeaconRegion class]]) {
+        CLBeaconRegion *beaconRegion = (CLBeaconRegion *)region;
+        if ([beaconRegion.identifier isEqualToString:self.settings[@"identifier"]] &amp;&amp; [beaconRegion.major intValue] == [self.settings[@"major"] intValue] &amp;&amp; [beaconRegion.minor intValue]== [self.settings[@"minor"] intValue]) {
+            UILocalNotification *notification = [[UILocalNotification alloc] init];
+            notification.userInfo = @{@"identifier": region.identifier};
+            notification.alertBody = [NSString stringWithFormat:@"Entering %@", region.identifier];
+            notification.soundName = @"Default";
+            [[UIApplication sharedApplication] presentLocalNotificationNow:notification];
+            [self remoteCheckin:FPCheckDirectionIn];
+        }
+    }
+}
+
+- (void)locationManager:(CLLocationManager *)manager didExitRegion:(CLRegion *)region
+{
+    if ([region isKindOfClass:[CLBeaconRegion class]]) {
+        CLBeaconRegion *beaconRegion = (CLBeaconRegion *)region;
+        if ([beaconRegion.identifier isEqualToString:self.settings[@"identifier"]] &amp;&amp; [beaconRegion.major intValue] == [self.settings[@"major"] intValue] &amp;&amp; [beaconRegion.minor intValue]== [self.settings[@"minor"] intValue]) {
+            UILocalNotification *notification = [[UILocalNotification alloc] init];
+            notification.userInfo = @{@"identifier": region.identifier};
+            notification.alertBody = [NSString stringWithFormat:@"Exiting %@", region.identifier];
+            notification.soundName = @"Default";
+            [[UIApplication sharedApplication] presentLocalNotificationNow:notification];
+            [self remoteCheckin:FPCheckDirectionOut];
+        }
+    }
+}
+</code></pre>
+
+<p>As you can see, we&rsquo;re just checking against our beacon, when we are in range or when we get out of range, we push a local notification and we perform a remote call to our Rails backend. You can find the full source on our Github account, don&rsquo;t worry.</p>
+
+<h2>Who&rsquo;s Fancy?</h2>
+
+<p>And there we go, the iOS app:</p>
+
+<p>{% img center /images/posts/2014-07-01/iOS.png &lsquo;Who&rsquo;s Fancy iOS&rsquo; %}</p>
+
+<p>and the web page:</p>
+
+<p>{% img center /images/posts/2014-07-01/rails.png &lsquo;Who&rsquo;s Fancy Rails&rsquo; %}</p>
+
+<p>You can find the rails and iOS code <a href="https://github.com/FancyPixel/whosfancy-rails">here</a> and <a href="https://github.com/FancyPixel/whosfancy-ios">here</a>.</p>
+
+<h4>Android version</h4>
+
+<p>We also pushed the Android version on our Github page, you can find it <a href="https://github.com/FancyPixel/whosfancy-android">here</a>.</p>
+
+<p>Until next time.</p>
+
+<p>Andrea</p>
+]]></content>
+  </entry>
+  
+</feed>
