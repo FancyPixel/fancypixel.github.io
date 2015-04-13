@@ -4,7 +4,7 @@
   <title><![CDATA[Category: swift | Fancy Pixel]]></title>
   <link href="http:///blog/categories/swift/atom.xml" rel="self"/>
   <link href="http:///"/>
-  <updated>2015-04-13T21:45:34+02:00</updated>
+  <updated>2015-04-13T22:07:14+02:00</updated>
   <id>http:///</id>
   <author>
     <name><![CDATA[Fancy Pixel]]></name>
@@ -19,7 +19,7 @@
     <updated>2015-04-13T21:26:20+02:00</updated>
     <id>http:///blog/2015/04/13/gulps-new-open-source-watchkit-app</id>
     <content type="html"><![CDATA[<p>We released a new app on the <a href="https://itunes.apple.com/us/app/gulps/id979057304?ls=1&amp;mt=8">AppStore</a> and decided to open source it. The app is called Gulps, a simple tracker of your daily water consumption. Gulps was a fun little side project built to learn a bit more about WatchKit and to strengthen my Swift-fu.<br/>
-If you read our latest post on <a href="http://fancypixel.github.io/blog/2015/03/29/share-data-between-watchkit-and-your-app-with-realm/">how to share data with Realm</a>, you&rsquo;ll find a lot of code in common in this app, but there&rsquo;s also quite a bit of new stuff that&rsquo;s worth checking out. For starters I personally really like the water meter that follows your device movement, made possible by the amazing <a href="https://github.com/dulaccc/DPMeterView">DPMeterView</a>. You might also like the Facebook Paper-like wavy effect, provided by one of my pride and joys, <a href="https://github.com/andreamazz/AMWaveTransition">AMWaveTransition</a>.<br/>
+If you read our latest post on <a href="http://fancypixel.github.io/blog/2015/03/29/share-data-between-watchkit-and-your-app-with-realm/">how to share data with Realm</a>, you&rsquo;ll find a lot of code in common in this app, but there&rsquo;s also quite a bit of new stuff that&rsquo;s worth checking out. For starters I personally really like the water meter that follows your device movement, made possible by the amazing <a href="https://github.com/dulaccc/DPMeterView">DPMeterView</a>. You might also like the Facebook Paper-like wavy effect in the onboarding, provided by one of my pride and joys, <a href="https://github.com/andreamazz/AMWaveTransition">AMWaveTransition</a>.<br/>
 You&rsquo;ll find the source <a href="https://github.com/FancyPixel/gulps">here</a>.</p>
 
 <p>Let us know what you think.<br/>
