@@ -4,7 +4,7 @@
   <title><![CDATA[Category: react | Fancy Pixel]]></title>
   <link href="http:///blog/categories/react/atom.xml" rel="self"/>
   <link href="http:///"/>
-  <updated>2015-04-13T21:41:46+02:00</updated>
+  <updated>2015-04-13T21:45:34+02:00</updated>
   <id>http:///</id>
   <author>
     <name><![CDATA[Fancy Pixel]]></name>
@@ -199,7 +199,7 @@ The last element of the chain is the <code>StoryItem</code> component, that rend
 
 <p>If everything has gone smoothly we should see a list of stories, something like this:</p>
 
-<p>{% img center /images/posts/2015-01-30/list.png  648 703 &lsquo;Stories list&rsquo; %}</p>
+<p><img class="center" src="/images/posts/2015-01-30/list.png" width="648" height="703" title="&lsquo;Stories list&rsquo;" ></p>
 
 <p>What happens when I click a story? Looking back at our StoriesPage we have this bit of code:</p>
 
@@ -392,7 +392,7 @@ As I said before, Flux is just an architecture, so what am I importing really in
 
 <p>If you already took a stab at Flux you might know this diagram:</p>
 
-<p>{% img center /images/posts/2015-01-29/flux.png  640 320 &lsquo;Flux architecture&rsquo; %}</p>
+<p><img class="center" src="/images/posts/2015-01-29/flux.png" width="640" height="320" title="&lsquo;Flux architecture&rsquo;" ></p>
 
 <p>It might not be easy to understand at first, but it makes more and more sense while you are implementing all those coloured blocks. Let me shed some light over it if I can.</p>
 

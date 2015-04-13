@@ -4,7 +4,7 @@
   <title><![CDATA[Category: ios | Fancy Pixel]]></title>
   <link href="http:///blog/categories/ios/atom.xml" rel="self"/>
   <link href="http:///"/>
-  <updated>2015-04-13T21:41:46+02:00</updated>
+  <updated>2015-04-13T21:45:34+02:00</updated>
   <id>http:///</id>
   <author>
     <name><![CDATA[Fancy Pixel]]></name>
@@ -55,7 +55,7 @@ I&rsquo;m not a fan of TODO app demos, they always feel&hellip; unimaginative&he
 App groups, like bundle identifiers, are defined by a reverse URI and they are prefixed with <code>group.</code>. They let you share data between your apps and are tightly bound to your provisioning profile (luckily Xcode handles their creation in your developer portal with ease).<br/>
 We can take advantage of that to create our Realm database in a shared space that will be visible (and writeable) by both our app and the app&rsquo;s WatchKit extension. Let&rsquo;s start by creating the group in our project&rsquo;s capabilities section:</p>
 
-<p>{% img center /images/posts/2015-03-29/appgroup.png 640 150 &lsquo;App groups&rsquo; %}</p>
+<p><img class="center" src="/images/posts/2015-03-29/appgroup.png" width="640" height="150" title="&lsquo;App groups&rsquo;" ></p>
 
 <p>Once this is out of the way we can tell Realm to store the database inside the group.
 We&rsquo;ll do so in our AppDelegate&rsquo;s <code>application(application: didFinishLaunchingWithOptions launchOptions:)</code> function:</p>
@@ -169,11 +169,11 @@ realm.commitWriteTransaction()
 <p>Ok, new technology, new framework, so much to learn, right?<br/>
 Well, it turns out that Apple did some thinking on this, and for what I witnessed, developing a Watch app is going to feel familiar for a lot of Cocoa and Cocoa Touch developers, albeit with some significant philosophical changes. First things first, let&rsquo;s create a new target holding the Watch app:</p>
 
-<p>{% img center /images/posts/2015-03-29/newtarget.png 640 340 &lsquo;WatchKit target&rsquo; %}</p>
+<p><img class="center" src="/images/posts/2015-03-29/newtarget.png" width="640" height="340" title="&lsquo;WatchKit target&rsquo;" ></p>
 
 <p>Then, the layout. We won&rsquo;t be using Autolayout, but something reminiscing a simplified version of Android&rsquo;s linear and relative layouts (no need to touch beefy XML files though, storyboards are still there for us). The layout for this will be a <code>WKInterfaceTable</code> with a custom <code>TableRowController</code>, holding a <code>WKInterfaceImage</code> and a <code>WKInterfaceLabel</code>:</p>
 
-<p>{% img center /images/posts/2015-03-29/storyboard.png 600 260 &lsquo;WatchKit storyboard&rsquo; %}</p>
+<p><img class="center" src="/images/posts/2015-03-29/storyboard.png" width="600" height="260" title="&lsquo;WatchKit storyboard&rsquo;" ></p>
 
 <p>The custom <code>TableRowController</code> is a plain class with a couple of properties, so let&rsquo;s take a look at this first:</p>
 
@@ -276,7 +276,7 @@ self.wormhole.passMessageObject(someObject, identifier: "mainUpdate")
 
 <p>Here&rsquo;s the demo app in all of its glory:</p>
 
-<p>{% img center /images/posts/2015-03-29/screenshot.gif 600 &lsquo;Done&rsquo; %}</p>
+<p><img class="center" src="/images/posts/2015-03-29/screenshot.gif" width="600" title="&lsquo;Done&rsquo;" ></p>
 
 <p>As you can see it&rsquo;s really easy to bootstrap a simple app for WatchKit, and thanks to a couple of great open source libraries adding persistence and interactivity is a painless effort. A big <em>thank you</em> to both the Realm team and Mutual Mobile for the amazing work on MMWormHole.</p>
 
@@ -450,11 +450,11 @@ Now that all that is out of the way, let&rsquo;s get to the code:</p>
 
 <p>And there we go, the iOS app:</p>
 
-<p>{% img center /images/posts/2014-07-01/iOS.png &lsquo;Who&rsquo;s Fancy iOS&rsquo; %}</p>
+<p><img class="center" src="/images/posts/2014-07-01/iOS.png" title="&lsquo;Who&rsquo;s Fancy iOS&rsquo;" ></p>
 
 <p>and the web page:</p>
 
-<p>{% img center /images/posts/2014-07-01/rails.png &lsquo;Who&rsquo;s Fancy Rails&rsquo; %}</p>
+<p><img class="center" src="/images/posts/2014-07-01/rails.png" title="&lsquo;Who&rsquo;s Fancy Rails&rsquo;" ></p>
 
 <p>You can find the rails and iOS code <a href="https://github.com/FancyPixel/whosfancy-rails">here</a> and <a href="https://github.com/FancyPixel/whosfancy-ios">here</a>.</p>
 
