@@ -24,7 +24,7 @@ This covers the backend and the views, we're missing something in between, say, 
 
 ##Here comes trouble
 I never was a big fan of implementing web UI, CSS always gets messy, Javascript files become scary monoliths where crappy code goes to die, while developers test their spelunker skills and loose their sanity. Maybe I'm just crap, but even using Sass and Coffeescript never really solved my issues.  
-I was excited to try something really new, but I knew that getting started with such a joung technology would end up being a major pain in the ass.   
+I was excited to try something really new, but I knew that getting started with such a young technology would end up being a major pain in the ass.   
 Case and point, learning and starting being productive (i.e.: writing usable code) took a fair bit of head scratching. There's still no clear "best practice" to perform common tasks, nor a clear starting configuration. Let's put it that way, if you come from the RoR world, where convention over configuration greatly reduces boilerplating and "forces" you to follow commonly established best practice, you're going to struggle with Flux. 
 This post will cover the solutions we came up with, they may not be perfect, but I'm fairly sure there are no anti-patterns in there, and they are a solid starting point.
 
