@@ -1,0 +1,262 @@
+
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html" charset="UTF-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+	<meta charset="utf-8">
+	<title>Fancy Pixel</title>
+
+	<meta name="author" content="Fancy Pixel">
+	
+	<meta name="description" content="13 Apr 2015 Gulps: New Open Source WatchKit App We released a new app on the AppStore and decided to open source it. The app is called Gulps, a &hellip;">
+
+	<meta name="HandheldFriendly" content="True" />
+	<meta name="MobileOptimized" content="320" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+	<link href="/atom.xml" rel="alternate" title="Fancy Pixel" type="application/atom+xml">
+	<link rel="canonical" href="">
+        <link href='http://fonts.googleapis.com/css?family=Kaushan+Script' rel='stylesheet' type='text/css'>
+        <link href="/favicon.png" rel="shortcut icon">
+	<link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic|Open+Sans:700,400" />
+	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+	<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/styles/github.min.css" />
+	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+</head>
+
+
+<body class="home-template">
+  <header id="site-head">
+  <div class="vertical">
+    <div id="site-head-content" class="inner">
+      <h1 class="blog-title"><a class="no-rollover" href="/">Fancy Pixel</a></h1>
+      <h2 class="blog-description"><a href="http://www.fancypixel.it" class="no-rollover">Home</a></h2>
+    </div>
+  </div>
+</header>
+
+  <main class="content" role="main">
+    
+
+
+
+  
+    <article class="post">
+      
+	
+		
+	
+	<header class="post-header">
+		<span class="post-meta">13 Apr 2015</span>
+		<h2 class="post-title">
+			
+			<a href="/blog/2015/04/13/gulps-new-open-source-watchkit-app/">
+			
+				Gulps: New Open Source WatchKit App</a>
+		</h2>
+	</header>
+	<section class="post-excerpt">
+		<p>We released a new app on the <a href="https://itunes.apple.com/us/app/gulps/id979057304?ls=1&amp;mt=8">AppStore</a> and decided to open source it. The app is called Gulps, a simple tracker of your daily water consumption. Gulps was a fun little side project built to learn a bit more about WatchKit and to strengthen my Swift-fu.<br/>
+If you read our latest post on <a href="http://fancypixel.github.io/blog/2015/03/29/share-data-between-watchkit-and-your-app-with-realm/">how to share data with Realm</a>, you&rsquo;ll find a lot of code in common in this app, but there&rsquo;s also quite a bit of new stuff that&rsquo;s worth checking out. For starters I personally really like the water meter that follows your device movement, made possible by the amazing <a href="https://github.com/dulaccc/DPMeterView">DPMeterView</a>. You might also like the Facebook Paper-like wavy effect in the onboarding, provided by one of my pride and joys, <a href="https://github.com/andreamazz/AMWaveTransition">AMWaveTransition</a>.<br/>
+You&rsquo;ll find the source <a href="https://github.com/FancyPixel/gulps">here</a>.</p>
+
+<p>Let us know what you think.<br/>
+Until next time.</p>
+
+<p>Andrea - <a href="https://twitter.com/theandreamazz">@theandreamazz</a></p>
+
+	</section>
+
+    </article>
+
+  
+    <article class="post">
+      
+	
+	<header class="post-header">
+		<span class="post-meta">29 Mar 2015</span>
+		<h2 class="post-title">
+			
+			<a href="/blog/2015/03/29/share-data-between-watchkit-and-your-app-with-realm/">
+			
+				Share Data Between WatchKit and Your App With Realm</a>
+		</h2>
+	</header>
+	<section class="post-excerpt">
+		<p>It&rsquo;s been a busy year for iOS developers. We got a slew of new toys to play with: a new version of iOS, new frameworks, a new language, new screen sizes and some new hardware to put on our wrists, just as soon as we thought that watches were anachronistic.<br/>
+New technology is always exciting, but keeping up to date can be a daunting task when deadlines keep getting closer. Lately I&rsquo;ve been taking some time off to delve deeper in these new topics and build a simple app out of it (that we are planning to open source). At the time of this writeup the app is still waiting to be reviewed, so we&rsquo;re going to just focus on something that I learned in the process and that can be useful to a lot of other iOS devs: sharing data between your app and its WatchKit extension, using <a href="http://realm.io/">Realm</a>.</p>
+
+
+	</section>
+
+    </article>
+
+  
+    <article class="post">
+      
+	
+	<header class="post-header">
+		<span class="post-meta">30 Jan 2015</span>
+		<h2 class="post-title">
+			
+			<a href="/blog/2015/01/30/react-plus-flux-backed-by-rails-api-part-3/">
+			
+				React + Flux Backed by Rails API - Part 3</a>
+		</h2>
+	</header>
+	<section class="post-excerpt">
+		<p>This is the last part of &ldquo;<em>React + Flux backed by Rails API</em>&rdquo;, make sure to check out <a href="/blog/2015/01/28/react-plus-flux-backed-by-rails-api/">Part 1</a> and <a href="/blog/2015/01/29/react-plus-flux-backed-by-rails-api-part-2/">Part 2</a> if you have missed them.</p>
+
+<p>In part 1 we built a Rails API for a tiny clone of Medium, called appropriately <em>Small</em>. In part 2 we went through the setup of a React app with a Flux architecture, and built our authentication workflow. We close this series by providing the list of the stories and a creation page, protected by authentication. A note of warning: this is a quick and sometimes naive implementation, its main purpose is to show you how to get started with React and Flux, that&rsquo;s why we didn&rsquo;t put too much effort in handling possible errors or, for that matter, even showing progress indicators.</p>
+
+
+	</section>
+
+    </article>
+
+  
+    <article class="post">
+      
+	
+	<header class="post-header">
+		<span class="post-meta">29 Jan 2015</span>
+		<h2 class="post-title">
+			
+			<a href="/blog/2015/01/29/react-plus-flux-backed-by-rails-api-part-2/">
+			
+				React + Flux Backed by Rails API - Part 2</a>
+		</h2>
+	</header>
+	<section class="post-excerpt">
+		<p>This is the second part of &ldquo;React + Flux backed by Rails API&rdquo;, make sure to checkout <a href="/blog/2015/01/28/react-plus-flux-backed-by-rails-api/">Part 1</a>.</p>
+
+<p>In part 1 we created our fancy Rails API, setup the authentication and defined a resource for our tiny clone of Medium.
+Time to reach the core of this post: the frontend built in React with the flux architecture.</p>
+
+
+	</section>
+
+    </article>
+
+  
+    <article class="post">
+      
+	
+	<header class="post-header">
+		<span class="post-meta">28 Jan 2015</span>
+		<h2 class="post-title">
+			
+			<a href="/blog/2015/01/28/react-plus-flux-backed-by-rails-api/">
+			
+				React + Flux Backed by Rails API - Part 1</a>
+		</h2>
+	</header>
+	<section class="post-excerpt">
+		<p>I&rsquo;ve been working on a frontend for a project we are developing here at Fancy Pixel. We are embracing what looks like a good habit: slicing what would be a monolithic Rails app in a lightweight backend serving APIs and a frontend consuming them. We did this in the not so distant past using Angular.js. It was all fine and dandy, until it wasn&rsquo;t. There&rsquo;s something about it that doesn&rsquo;t sit right with me, I wouldn&rsquo;t go in detail, since many others already did, but let&rsquo;s just say that there&rsquo;s too much magic involved for my tastes (says the guy using Rails). Magic is fine as long as I can figure out how to tinker with the internals when things go down south. With Angular the effort seems too much, but that&rsquo;s just personal taste really. Also I can&rsquo;t deny that the major structural changes introduced in 2.0 were the last nail in the coffin.<br/>
+I wanted to try something new, something that would enforce a solid architecture of our apps, letting me control the single cogs in the engine. React got a lot of good press in the past months, so I took the chance to dive in. In this three-part post you&rsquo;ll find pretty much everything I learned by writing a frontend using React, with a vanilla Flux architecture, consuming an API written in Rails.</p>
+
+
+	</section>
+
+    </article>
+
+  
+    <article class="post">
+      
+	
+	<header class="post-header">
+		<span class="post-meta">01 Jul 2014</span>
+		<h2 class="post-title">
+			
+			<a href="/blog/2014/07/01/fun-with-ibeacon/">
+			
+				Fun With iBeacon</a>
+		</h2>
+	</header>
+	<section class="post-excerpt">
+		<p>You probably know already what <a href="https://developer.apple.com/library/ios/documentation/userexperience/conceptual/LocationAwarenessPG/RegionMonitoring/RegionMonitoring.html">iBeacon</a> is, but just to reiterate, iBeacon is the Apple way of saying Bluetooth 4 Low Energy. At the cost of sounding like a mindless drone, by &lsquo;the Apple way of&rsquo; I mean &lsquo;it just works and shows a lot of potential&rsquo;. An iBeacon is a simple B4LE device that keeps broadcasting its presence. Other B4LE devices can sense when they reach the beacon without draining the battery (hence the LE) and making the user scream in agony. &ldquo;Oook, what do I do with it?&rdquo;. The best thing you can do is locating a user without the GPS, which means locating a user inside a building. The cool thing is that it&rsquo;s fast, it takes seconds to detect a beacon and to react to its vicinity (or lack there of), and it works within the reach of Bluetooth technology (let&rsquo;s say around a 50 meters radius). I should also mention that it works fine with Android too.</p>
+
+<p>This week an <a href="http://estimote.com">Estimote</a> developer kit arrived in our offices, so we took the chance to play around with it.</p>
+
+
+	</section>
+
+    </article>
+
+
+<nav class="pagination" role="pagination">
+  
+
+  <span class="page-number">
+    Page 1 of 1
+  </span>
+
+  
+</nav>
+
+
+  </main>
+  <footer class="site-footer"><a class="subscribe icon-feed" href="http:///atom.xml"><span class="tooltip">Subscribe!</span></a>
+
+
+<div class="inner">
+
+
+Follow me on
+
+
+
+<a class="social twitter" href="http://twitter.com/FancyPixel" title="Twitter">Twitter</a>
+
+
+
+<a class="social github" href="http://github.com/fancypixel" title="GitHub">GitHub</a>
+
+
+
+<a class="social google_plus" href="http://plus.google.com/+FancypixelIt" title="Google+">Google+</a>
+
+
+<section class="copyright">All content copyright <a href="/">Fancy Pixel</a> © 2015 • All rights reserved.</section>
+
+<section class="poweredby">Casper theme by <a class="icon-ghost" href="http://tryghost.org">Ghost</a> &amp; Published with <a href="http://octopress.org">Octopress</a></section>
+
+</div>
+</footer>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+
+
+
+<script type="text/javascript">
+      var disqus_shortname = 'fancypixel';
+      
+        
+        var disqus_script = 'count.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+	<script type="text/javascript">
+		var _gaq = _gaq || [];
+		_gaq.push(['_setAccount', 'UA-49005091-8']);
+		_gaq.push(['_trackPageview']);
+
+		(function() {
+			var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+			ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+			var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+		})();
+	</script>
+
+
+</body>
+</html>

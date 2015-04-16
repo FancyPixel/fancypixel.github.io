@@ -1,0 +1,389 @@
+
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html" charset="UTF-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+	<meta charset="utf-8">
+	<title>Share data between WatchKit and your app with Realm | Fancy Pixel</title>
+
+	<meta name="author" content="Fancy Pixel">
+	
+	<meta name="description" content="Fancy Pixel 29 Mar 2015 Share Data Between WatchKit and Your App With Realm It&rsquo;s been a busy year for iOS developers. We got a slew of new &hellip;">
+
+	<meta name="HandheldFriendly" content="True" />
+	<meta name="MobileOptimized" content="320" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+	<link href="/atom.xml" rel="alternate" title="Fancy Pixel" type="application/atom+xml">
+	<link rel="canonical" href="">
+        <link href='http://fonts.googleapis.com/css?family=Kaushan+Script' rel='stylesheet' type='text/css'>
+        <link href="/favicon.png" rel="shortcut icon">
+	<link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic|Open+Sans:700,400" />
+	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+	<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/styles/github.min.css" />
+	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+</head>
+
+
+<body class="post-template">
+  <main class="content" role="main"><article class="post">
+  
+	<header class="post-header">
+		<a id="blog-logo" href="/">Fancy Pixel</a>
+	</header>
+	<span class="post-meta">29 Mar 2015</span>
+	<h1 class="post-title">Share Data Between WatchKit and Your App With Realm</h1>
+
+	<section class="post-content">
+		<p>It&rsquo;s been a busy year for iOS developers. We got a slew of new toys to play with: a new version of iOS, new frameworks, a new language, new screen sizes and some new hardware to put on our wrists, just as soon as we thought that watches were anachronistic.<br/>
+New technology is always exciting, but keeping up to date can be a daunting task when deadlines keep getting closer. Lately I&rsquo;ve been taking some time off to delve deeper in these new topics and build a simple app out of it (that we are planning to open source). At the time of this writeup the app is still waiting to be reviewed, so we&rsquo;re going to just focus on something that I learned in the process and that can be useful to a lot of other iOS devs: sharing data between your app and its WatchKit extension, using <a href="http://realm.io/">Realm</a>.</p>
+
+<!-- More -->
+
+
+<h1>Why Realm</h1>
+
+<p>Realm is a great replacement for both SQLite and Core Data, it offers a quick and painless way to persist data in your iOS (and Android) app. The thing that makes it so great is the ease of use, it reduces your boilerplate code to next to nothing (I&rsquo;m watching you, Core Data), keeping things at a high level of abstraction (I&rsquo;m watching you SQLite) and&hellip; it&rsquo;s fast. It really is a brilliant piece of software, and I urge you to checkout the <a href="http://realm.io/docs/cocoa/0.91.1/">official documentation</a> if you&rsquo;re in need of a persistence framework for your app.</p>
+
+<h1>The sample app</h1>
+
+<p>We&rsquo;re going to learn how to share data between an app and its WatchKit extension, and what better way to use a sample app as reference?.
+I&rsquo;m not a fan of TODO app demos, they always feel&hellip; unimaginative&hellip; but I have to admit that they are the perfect sample for a task like this. So, bear with me, let me introduce to you another TODO sample app: <em>Done!</em>, a simple TODO list where we can add items and mark them as done from our Apple Watch.</p>
+
+<h1>Setting up Realm</h1>
+
+<p>WatchKit extensions are just another target inside your app, just like Today extensions, so they are packed alongside your app, but they have their own life, and most importantly, their own bundle identifier. This means that data stored within an app is not visible to the extension and vice versa. Apple offers a way to solve the issue through app groups.<br/>
+App groups, like bundle identifiers, are defined by a reverse URI and they are prefixed with <code>group.</code>. They let you share data between your apps and are tightly bound to your provisioning profile (luckily Xcode handles their creation in your developer portal with ease).<br/>
+We can take advantage of that to create our Realm database in a shared space that will be visible (and writeable) by both our app and the app&rsquo;s WatchKit extension. Let&rsquo;s start by creating the group in our project&rsquo;s capabilities section:</p>
+
+<p><img class="center" src="/images/posts/2015-03-29/appgroup.png" width="640" height="150" title="'App groups'" ></p>
+
+<p>Once this is out of the way we can tell Realm to store the database inside the group.
+We&rsquo;ll do so in our AppDelegate&rsquo;s <code>application(application: didFinishLaunchingWithOptions launchOptions:)</code> function:</p>
+
+<pre><code>let directory: NSURL = NSFileManager.defaultManager().containerURLForSecurityApplicationGroupIdentifier("group.it.fancypixel.Done")!
+let realmPath = directory.path!.stringByAppendingPathComponent("db.realm")
+RLMRealm.setDefaultRealmPath(realmPath)
+</code></pre>
+
+<p>That&rsquo;s it, Realm is ready to go, we just need to define a model to persist. Let&rsquo;s do it:</p>
+
+<pre><code>// Entry.swift
+import Realm
+
+class Entry: RLMObject {
+  dynamic var title = ""
+  dynamic var completed = false
+}
+</code></pre>
+
+<h1>ViewController</h1>
+
+<p>The ViewController handling the TODO list will be rather simple, it&rsquo;ll hold a plain <code>UITableView</code> with a custom header presenting the <code>UITextField</code> for the user&rsquo;s input, nothing fancy:</p>
+
+<pre><code>// ViewController.swift
+import Realm
+import UIKit
+
+class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSource, UITextFieldDelegate {
+
+    @IBOutlet var tableView: UITableView!
+    var dataSource: RLMResults!
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        reloadEntries()
+    }
+
+    func tableView(tableView: UITableView, viewForHeaderInSection section: Int) -&gt; UIView? {
+        let container = UIView(frame: CGRectMake(0, 0, self.view.frame.size.width, 60))
+        let textField = UITextField(frame: CGRectMake(10, 10, self.view.frame.size.width - 20, 40))
+        textField.delegate = self
+        textField.textColor = UIColor.whiteColor()
+        let placeholer = NSAttributedString(string: "Add an item", attributes: [NSForegroundColorAttributeName: UIColor.lightGrayColor()])
+        textField.attributedPlaceholder = placeholer
+        container.addSubview(textField)
+        return container
+    }
+
+    func reloadEntries() {
+        dataSource = Entry.allObjects()
+        self.tableView.reloadData()
+    }
+
+    func textFieldShouldReturn(textField: UITextField) -&gt; Bool {
+        textField.resignFirstResponder()
+
+        let realm = RLMRealm.defaultRealm()
+        realm.beginWriteTransaction()
+        let entry = Entry()
+        entry.title = textField.text
+        entry.completed = false
+        realm.addObject(entry)
+        realm.commitWriteTransaction()
+        reloadEntries()
+        return true
+    }
+
+    func tableView(tableView: UITableView, numberOfRowsInSection section: Int) -&gt; Int {
+        return Int(dataSource.count)
+    }
+
+    func tableView(tableView: UITableView, cellForRowAtIndexPath indexPath: NSIndexPath) -&gt; UITableViewCell {
+        var cell = tableView.dequeueReusableCellWithIdentifier("Cell") as UITableViewCell
+        let entry = dataSource[UInt(indexPath.row)] as Entry
+        cell.textLabel!.text = entry.title
+        cell.accessoryType = entry.completed ? .Checkmark : .None
+        return cell
+    }
+
+    func tableView(tableView: UITableView, didSelectRowAtIndexPath indexPath: NSIndexPath) {
+        let entry = dataSource[UInt(indexPath.row)] as Entry
+        let realm = RLMRealm.defaultRealm()
+        realm.beginWriteTransaction()
+        entry.completed = !entry.completed
+        realm.commitWriteTransaction()
+        reloadEntries()
+    }
+}
+</code></pre>
+
+<p>As you can see we are retrieving the table view&rsquo;s items from Realm with a simple call:</p>
+
+<pre><code>Entry.allObjects()
+</code></pre>
+
+<p>and storing the changes with a couple of lines:</p>
+
+<pre><code>realm.beginWriteTransaction()
+let entry = Entry
+entry.title = textField.text
+entry.completed = false
+realm.addObject(entry)
+realm.commitWriteTransaction()
+</code></pre>
+
+<p>If you worked with Core Data in the past you should have a better understanding of my claim <em>&ldquo;less boilerplate code&rdquo;</em>.</p>
+
+<h1>WatchKit</h1>
+
+<p>Ok, new technology, new framework, so much to learn, right?<br/>
+Well, it turns out that Apple did some thinking on this, and for what I witnessed, developing a Watch app is going to feel familiar for a lot of Cocoa and Cocoa Touch developers, albeit with some significant philosophical changes. First things first, let&rsquo;s create a new target holding the Watch app:</p>
+
+<p><img class="center" src="/images/posts/2015-03-29/newtarget.png" width="640" height="340" title="'WatchKit target'" ></p>
+
+<p>Then, the layout. We won&rsquo;t be using Autolayout, but something reminiscing a simplified version of Android&rsquo;s linear and relative layouts (no need to touch beefy XML files though, storyboards are still there for us). The layout for this will be a <code>WKInterfaceTable</code> with a custom <code>TableRowController</code>, holding a <code>WKInterfaceImage</code> and a <code>WKInterfaceLabel</code>:</p>
+
+<p><img class="center" src="/images/posts/2015-03-29/storyboard.png" width="600" height="260" title="'WatchKit storyboard'" ></p>
+
+<p>The custom <code>TableRowController</code> is a plain class with a couple of properties, so let&rsquo;s take a look at this first:</p>
+
+<pre><code>class EntryTableRowController: NSObject {
+    @IBOutlet var imageCheck: WKInterfaceImage!
+    @IBOutlet var textLabel: WKInterfaceLabel!
+}
+</code></pre>
+
+<p>Pretty straightforward, think of it as the equivalent of a custom <code>UITableViewCell</code>.<br/>
+Let&rsquo;s take a look on how to populate the table:</p>
+
+<pre><code>override func awakeWithContext(context: AnyObject?) {
+    super.awakeWithContext(context)
+
+    let directory: NSURL = NSFileManager.defaultManager().containerURLForSecurityApplicationGroupIdentifier("group.it.fancypixel.Done")!
+    let realmPath = directory.path!.stringByAppendingPathComponent("db.realm")
+    RLMRealm.setDefaultRealmPath(realmPath)
+    reloadTableData()
+}
+
+func reloadTableData() {
+    let realm = RLMRealm.defaultRealm()
+    let dataSource = Entry.allObjects()
+
+    watchTable.setNumberOfRows(Int(dataSource.count), withRowType: "EntryRow")
+
+    for index in 0..&lt;Int(dataSource.count) {
+        let entry = dataSource[UInt(index)] as Entry
+        if let row = watchTable.rowControllerAtIndex(index) as? EntryTableRowController {
+            row.textLabel.setText(entry.title)
+            let imageName = entry.completed ? "check-completed" : "check-empty"
+            row.imageCheck.setImageNamed(imageName)
+        }
+    }
+}
+</code></pre>
+
+<p>That&rsquo;s a little different from what we&rsquo;re used in UIKit. No <code>delegate</code> nor <code>dataSource</code>, in WatchKit we explicitly define every row before showing the table.<br/>
+Also, as you can see in the <code>awakeWithContext</code> function, we are setting up Realm as we did in the main app. As a side note, the pieces of code that are shared between the two targets (in our case, everything concerning the model) should be moved in a custom framework to avoid code duplication. For the purpose of this sample I opted to duplicate the Realm initialization and shared the model between the two targets, but in a more structured app I would definitely take the framework route.
+If we build and run we can add an item on the phone, and once we reload the app we&rsquo;ll see the same item in the watch extension too.<br/>
+That doesn&rsquo;t feel very responsive though, right? We&rsquo;ll fix that in a bit, but first let&rsquo;s add the ability to mark an item as <em>done</em> from the watch:</p>
+
+<pre><code class="">override func table(table: WKInterfaceTable, didSelectRowAtIndex rowIndex: Int) {
+    let dataSource = Entry.allObjects()
+    let entry = dataSource[UInt(rowIndex)] as Entry
+    let realm = RLMRealm.defaultRealm()
+    realm.beginWriteTransaction()
+    entry.completed = !entry.completed
+    realm.commitWriteTransaction()
+    reloadTableData()
+}
+</code></pre>
+
+<p>That pretty much covers it. Right now it&rsquo;s even more apparent that even if the two apps are communicating, there&rsquo;s no real sense of interaction, since we need to reload the app to see the changes.</p>
+
+<h1>Syncing data</h1>
+
+<p>We need to somehow advertise that our watch app or our main app performed something meaningful. There are <em>official</em> ways to do that, and you can read more about them on <a href="http://natashatherobot.com/watchkit-open-ios-app-from-watch/">this blog post from Natasha The Robot</a>, but in this case I want to show you how a brilliant library called <a href="https://github.com/mutualmobile/MMWormhole">MMWormHole</a> can abstract this task for us.</p>
+
+<h2>MMWormHole</h2>
+
+<p>MMWormhole creates a bridge between an app and its extensions. The API is clear and concise and it has a delightfully geeky name. It works like a pub/sub system, one end registers its interest for a kind of message (defined by a string identifier), and the other end can broadcast a new event. When the event is raised the subscriber&rsquo;s handler is fired. Sounds like something we can leverage from our app. Let&rsquo;s start by registering interest in <code>watch</code> updates on our main app:</p>
+
+<pre><code>self.wormhole.listenForMessageWithIdentifier("watchUpdate", listener: { (_) -&gt; Void in
+    self.reloadEntries()
+})
+</code></pre>
+
+<p>and on our watch app we&rsquo;ll listen for <code>main</code> updates:</p>
+
+<pre><code>self.wormhole.listenForMessageWithIdentifier("mainUpdate", listener: { (_) -&gt; Void in
+    self.reloadTableData()
+})
+</code></pre>
+
+<p>And that&rsquo;s it. When something changes in our model we just need to call these function:</p>
+
+<pre><code>// From the watch
+self.wormhole.passMessageObject("update", identifier: "watchUpdate")
+
+// From the main app
+self.wormhole.passMessageObject(someObject, identifier: "mainUpdate")
+</code></pre>
+
+<h1>Realm notifications</h1>
+
+<p><em>Update</em></p>
+
+<p>Once this post was live, Tim Anglade from Realm reached out to me and was kind enough to point out that there&rsquo;s a built-in notification system in Realm, so MMWormHole in this case isn&rsquo;t really needed. The API is really easy to use and requires no configuration, here&rsquo;s how it works:</p>
+
+<pre><code>realmToken = RLMRealm.defaultRealm().addNotificationBlock { note, realm in
+    self.reloadEntries()
+}
+</code></pre>
+
+<p>As long as we keep a strong pointer to the token, the system fires the notification block as soon as a write transaction is committed. You can find the updated code in the sample app.</p>
+
+<h2>Demo</h2>
+
+<p>Here&rsquo;s the demo app in all of its glory:</p>
+
+<p><img class="center" src="/images/posts/2015-03-29/screenshot.gif" width="600" title="'Done'" ></p>
+
+<p>As you can see it&rsquo;s really easy to bootstrap a simple app for WatchKit, and thanks to a couple of great open source libraries adding persistence and interactivity is a painless effort. A big <em>thank you</em> to both the Realm team and Mutual Mobile for the amazing work on MMWormHole.</p>
+
+<p>As usual, you&rsquo;ll find the source code of the demo app on our <a href="https://github.com/FancyPixel/done-swift">GitHub page</a>. Feel free to leave a comment, we&rsquo;d love to hear your feedback.</p>
+
+<p>Until next time,</p>
+
+<p>Andrea - <em><a href="https://twitter.com/theandreamazz">@theandreamazz</a></em></p>
+
+	</section>
+
+  <footer class="post-footer">
+  <section class="author">
+    <h4>Fancy Pixel</h4>
+    <p></p>
+  </section>
+  <section class="share">
+    <h4>Share this post</h4>
+    <a class="icon-twitter" href="http://twitter.com/share?text=Share data between WatchKit and your app with Realm&amp;url=http:///blog/2015/03/29/share-data-between-watchkit-and-your-app-with-realm/" onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+      <span class="hidden">Twitter</span>
+    </a>
+    <a class="icon-facebook" href="https://www.facebook.com/sharer/sharer.php?u=http:///blog/2015/03/29/share-data-between-watchkit-and-your-app-with-realm/" onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+      <span class="hidden">Facebook</span>
+    </a>
+    <a class="icon-google-plus" href="https://plus.google.com/share?url=http:///blog/2015/03/29/share-data-between-watchkit-and-your-app-with-realm/" onclick="window.open(this.href, 'google-plus-share', 'width=490,height=530');return false;">
+      <span class="hidden">Google+</span>
+    </a>
+  </section>
+</footer>
+  <hr>
+  
+    <div class="share">
+</div>
+
+  
+  
+  <section id="comment">
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+  
+</article></main>
+  <footer class="site-footer"><a class="subscribe icon-feed" href="http:///atom.xml"><span class="tooltip">Subscribe!</span></a>
+
+
+<div class="inner">
+
+
+Follow me on
+
+
+
+<a class="social twitter" href="http://twitter.com/FancyPixel" title="Twitter">Twitter</a>
+
+
+
+<a class="social github" href="http://github.com/fancypixel" title="GitHub">GitHub</a>
+
+
+
+<a class="social google_plus" href="http://plus.google.com/+FancypixelIt" title="Google+">Google+</a>
+
+
+<section class="copyright">All content copyright <a href="/">Fancy Pixel</a> © 2015 • All rights reserved.</section>
+
+<section class="poweredby">Casper theme by <a class="icon-ghost" href="http://tryghost.org">Ghost</a> &amp; Published with <a href="http://octopress.org">Octopress</a></section>
+
+</div>
+</footer>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+
+
+
+<script type="text/javascript">
+      var disqus_shortname = 'fancypixel';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http:///blog/2015/03/29/share-data-between-watchkit-and-your-app-with-realm/';
+        var disqus_url = 'http:///blog/2015/03/29/share-data-between-watchkit-and-your-app-with-realm/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+	<script type="text/javascript">
+		var _gaq = _gaq || [];
+		_gaq.push(['_setAccount', 'UA-49005091-8']);
+		_gaq.push(['_trackPageview']);
+
+		(function() {
+			var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+			ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+			var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+		})();
+	</script>
+
+
+</body>
+</html>
