@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 
   <title><![CDATA[Category: react | Fancy Pixel]]></title>
-  <link href="http:///blog/categories/react/atom.xml" rel="self"/>
-  <link href="http:///"/>
-  <updated>2015-04-13T22:07:14+02:00</updated>
-  <id>http:///</id>
+  <link href="http://fancypixel.github.io/blog/categories/react/atom.xml" rel="self"/>
+  <link href="http://fancypixel.github.io/"/>
+  <updated>2015-04-16T21:42:28+02:00</updated>
+  <id>http://fancypixel.github.io/</id>
   <author>
     <name><![CDATA[Fancy Pixel]]></name>
     
@@ -15,9 +15,9 @@
   
   <entry>
     <title type="html"><![CDATA[React + Flux backed by Rails API - Part 3]]></title>
-    <link href="http:///blog/2015/01/30/react-plus-flux-backed-by-rails-api-part-3/"/>
+    <link href="http://fancypixel.github.io/blog/2015/01/30/react-plus-flux-backed-by-rails-api-part-3/"/>
     <updated>2015-01-30T15:40:43+01:00</updated>
-    <id>http:///blog/2015/01/30/react-plus-flux-backed-by-rails-api-part-3</id>
+    <id>http://fancypixel.github.io/blog/2015/01/30/react-plus-flux-backed-by-rails-api-part-3</id>
     <content type="html"><![CDATA[<p>This is the last part of &ldquo;<em>React + Flux backed by Rails API</em>&rdquo;, make sure to check out <a href="/blog/2015/01/28/react-plus-flux-backed-by-rails-api/">Part 1</a> and <a href="/blog/2015/01/29/react-plus-flux-backed-by-rails-api-part-2/">Part 2</a> if you have missed them.</p>
 
 <p>In part 1 we built a Rails API for a tiny clone of Medium, called appropriately <em>Small</em>. In part 2 we went through the setup of a React app with a Flux architecture, and built our authentication workflow. We close this series by providing the list of the stories and a creation page, protected by authentication. A note of warning: this is a quick and sometimes naive implementation, its main purpose is to show you how to get started with React and Flux, that&rsquo;s why we didn&rsquo;t put too much effort in handling possible errors or, for that matter, even showing progress indicators.</p>
@@ -366,9 +366,9 @@ React is here to stay, and it&rsquo;s already influencing every other JS framewo
   
   <entry>
     <title type="html"><![CDATA[React + Flux backed by Rails API - Part 2]]></title>
-    <link href="http:///blog/2015/01/29/react-plus-flux-backed-by-rails-api-part-2/"/>
+    <link href="http://fancypixel.github.io/blog/2015/01/29/react-plus-flux-backed-by-rails-api-part-2/"/>
     <updated>2015-01-29T10:31:00+01:00</updated>
-    <id>http:///blog/2015/01/29/react-plus-flux-backed-by-rails-api-part-2</id>
+    <id>http://fancypixel.github.io/blog/2015/01/29/react-plus-flux-backed-by-rails-api-part-2</id>
     <content type="html"><![CDATA[<p>This is the second part of &ldquo;React + Flux backed by Rails API&rdquo;, make sure to checkout <a href="/blog/2015/01/28/react-plus-flux-backed-by-rails-api/">Part 1</a>.</p>
 
 <p>In part 1 we created our fancy Rails API, setup the authentication and defined a resource for our tiny clone of Medium.
@@ -959,9 +959,9 @@ Getting back to the login process, the render function defines the markup of our
   
   <entry>
     <title type="html"><![CDATA[React + Flux backed by Rails API - Part 1]]></title>
-    <link href="http:///blog/2015/01/28/react-plus-flux-backed-by-rails-api/"/>
+    <link href="http://fancypixel.github.io/blog/2015/01/28/react-plus-flux-backed-by-rails-api/"/>
     <updated>2015-01-28T16:04:00+01:00</updated>
-    <id>http:///blog/2015/01/28/react-plus-flux-backed-by-rails-api</id>
+    <id>http://fancypixel.github.io/blog/2015/01/28/react-plus-flux-backed-by-rails-api</id>
     <content type="html"><![CDATA[<p>I&rsquo;ve been working on a frontend for a project we are developing here at Fancy Pixel. We are embracing what looks like a good habit: slicing what would be a monolithic Rails app in a lightweight backend serving APIs and a frontend consuming them. We did this in the not so distant past using Angular.js. It was all fine and dandy, until it wasn&rsquo;t. There&rsquo;s something about it that doesn&rsquo;t sit right with me, I wouldn&rsquo;t go in detail, since many others already did, but let&rsquo;s just say that there&rsquo;s too much magic involved for my tastes (says the guy using Rails). Magic is fine as long as I can figure out how to tinker with the internals when things go down south. With Angular the effort seems too much, but that&rsquo;s just personal taste really. Also I can&rsquo;t deny that the major structural changes introduced in 2.0 were the last nail in the coffin.<br/>
 I wanted to try something new, something that would enforce a solid architecture of our apps, letting me control the single cogs in the engine. React got a lot of good press in the past months, so I took the chance to dive in. In this three-part post you&rsquo;ll find pretty much everything I learned by writing a frontend using React, with a vanilla Flux architecture, consuming an API written in Rails.</p>
 
@@ -987,7 +987,7 @@ The Virtual DOM is something that we&rsquo;re going to see implemented in other 
 <h2>Here comes trouble</h2>
 
 <p>I never was a big fan of implementing web UI, CSS always gets messy, Javascript files become scary monoliths where crappy code goes to die, while developers test their spelunker skills and loose their sanity. Maybe I&rsquo;m just crap, but even using Sass and Coffeescript never really solved my issues.<br/>
-I was excited to try something really new, but I knew that getting started with such a joung technology would end up being a major pain in the ass. <br/>
+I was excited to try something really new, but I knew that getting started with such a young technology would end up being a major pain in the ass. <br/>
 Case and point, learning and starting being productive (i.e.: writing usable code) took a fair bit of head scratching. There&rsquo;s still no clear &ldquo;best practice&rdquo; to perform common tasks, nor a clear starting configuration. Let&rsquo;s put it that way, if you come from the RoR world, where convention over configuration greatly reduces boilerplating and &ldquo;forces&rdquo; you to follow commonly established best practice, you&rsquo;re going to struggle with Flux.
 This post will cover the solutions we came up with, they may not be perfect, but I&rsquo;m fairly sure there are no anti-patterns in there, and they are a solid starting point.</p>
 
