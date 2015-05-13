@@ -2,10 +2,10 @@
 <feed xmlns="http://www.w3.org/2005/Atom">
 
   <title><![CDATA[Category: apple | Fancy Pixel]]></title>
-  <link href="http:///blog/categories/apple/atom.xml" rel="self"/>
-  <link href="http:///"/>
-  <updated>2015-04-13T22:07:14+02:00</updated>
-  <id>http:///</id>
+  <link href="http://fancypixel.github.io/blog/categories/apple/atom.xml" rel="self"/>
+  <link href="http://fancypixel.github.io/"/>
+  <updated>2015-04-16T21:42:28+02:00</updated>
+  <id>http://fancypixel.github.io/</id>
   <author>
     <name><![CDATA[Fancy Pixel]]></name>
     
@@ -15,9 +15,9 @@
   
   <entry>
     <title type="html"><![CDATA[Share data between WatchKit and your app with Realm]]></title>
-    <link href="http:///blog/2015/03/29/share-data-between-watchkit-and-your-app-with-realm/"/>
+    <link href="http://fancypixel.github.io/blog/2015/03/29/share-data-between-watchkit-and-your-app-with-realm/"/>
     <updated>2015-03-29T15:00:32+02:00</updated>
-    <id>http:///blog/2015/03/29/share-data-between-watchkit-and-your-app-with-realm</id>
+    <id>http://fancypixel.github.io/blog/2015/03/29/share-data-between-watchkit-and-your-app-with-realm</id>
     <content type="html"><![CDATA[<p>It&rsquo;s been a busy year for iOS developers. We got a slew of new toys to play with: a new version of iOS, new frameworks, a new language, new screen sizes and some new hardware to put on our wrists, just as soon as we thought that watches were anachronistic.<br/>
 New technology is always exciting, but keeping up to date can be a daunting task when deadlines keep getting closer. Lately I&rsquo;ve been taking some time off to delve deeper in these new topics and build a simple app out of it (that we are planning to open source). At the time of this writeup the app is still waiting to be reviewed, so we&rsquo;re going to just focus on something that I learned in the process and that can be useful to a lot of other iOS devs: sharing data between your app and its WatchKit extension, using <a href="http://realm.io/">Realm</a>.</p>
 
