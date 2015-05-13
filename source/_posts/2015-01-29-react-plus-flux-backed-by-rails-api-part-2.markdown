@@ -241,7 +241,7 @@ This cover all the user-initiated actions in the context of the session. The log
 The login method of our WebAPIUtils class is this:
 
 ~~~js
-// ./scripts/utils/WeAPIUtils.js
+// ./scripts/utils/WebAPIUtils.js
 var ServerActionCreators = require('../actions/ServerActionCreators.react.jsx');
 var request = require('superagent');
 
