@@ -4,7 +4,7 @@
   <title><![CDATA[Fancy Pixel]]></title>
   <link href="http://fancypixel.github.io/atom.xml" rel="self"/>
   <link href="http://fancypixel.github.io/"/>
-  <updated>2015-05-13T12:11:01+02:00</updated>
+  <updated>2015-05-21T11:45:48+02:00</updated>
   <id>http://fancypixel.github.io/</id>
   <author>
     <name><![CDATA[Fancy Pixel]]></name>
@@ -1466,7 +1466,7 @@ end
 
 <p>That&rsquo;s it. Migrate, run the server, and create a user via the console. You should get something like this:</p>
 
-<pre><code>$ curl localhost:3002/v1/login --data "username=user@example.com&amp;password=password"
+<pre><code>$ curl localhost:3002/v1/login --data "user[email]=user@example.com&amp;user[username]=user&amp;user[password]=password&amp;user[password_confirmation]=password"
 {
   "token_type": "Bearer",
   "user_id": 1,
