@@ -12,3 +12,6 @@ source/stylesheets/screen.css
 vendor
 node_modules
 Gemfile.lock
+.ruby-version
+.ruby-gemset
+.idea/
