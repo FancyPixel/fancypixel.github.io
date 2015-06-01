@@ -100,6 +100,8 @@ end
 
 Both the methods do nothing more that returning an Hash defining key-values couples that we're willing to return as JSON. In particular ```serialize_awesome_stuffs``` creates an ```Array``` of ```Hash``` and internally, just for DRYing things up a bit, it calls ```serialize_awesome_stuff``` (singular). Maybe the overall naming is not the best in the world, uh? Bonus point: defining the method's parameter ```awesome_stuffs = @awesome_stuffs``` allows us to make lighter and more readable our code because if we remained adherent to conventional variable naming, probably our controller is defining something like ```@awesome_stuff``` (and you saw that we did) that is directly visible and usable by our module. If we're going to have a bout of creativity and we'll want to use our personal variables names, we'll not have any sort of problem.
 
+Take this piece of code as example:
+
 
 ---IT
 Come vedete entrambi i metodi non fanno altro che ritornare Hash con definite le coppie chiave - valore che, inutile dirlo, vogliamo ritornare come JSON. In particolare ```serialize_awesome_stuffs``` crea un ```Array``` di ```Hash``` e internamente, per "DRYing up" chiama ```serialize_awesome_stuff``` (singular). Forse la scelta dei nomi non è delle più felici vero?  Bonus point: definendo il parametro ```awesome_stuffs = @awesome_stuffs``` ci permette di rendere ancora più 'leggero' e leggibile il nostro codice in quanto se siamo rimasti aderenti al naming convenzionale delle variabili, probabilmente il nostro controller avrà definito qualcosa come  ```@awesome_stuff``` (e avete visto che lo abbiamo fatto) che è direttamente visibile ed utilizzabile dal nostro metodo, avendo incluso il modulo nel controller. Nel caso però ci venisse un attacco di creatività e volessimo utilizzare dei nomi di variabili personalizzati, non avremmo nessun problema.
@@ -122,26 +124,41 @@ and everything will work as expected.
 
 ## Step-by-step: let's complicate things a bit 
 
+Let's go together raise a bit the complexity of our example, adding a ```User``` model and defining a one-to-many relationship with our AwesomeStuff:
+
+---IT
 Andiamo insieme ad aumentare un po' la complessità al nostro esempio, aggiungendo il modello ```User``` e definendo una relazione one-to-many con il nostro AwesomeStuff:
+---
 
 ~~~bash
 rails g model user name:string
 ~~~
 
+add the User reference in AwesomeStuff:
+
+---IT
 Aggiungiamo la reference a User in AwesomeStuff:
+---
 
 ~~~bash
 rails g migration add_user_reference_to_awesome_stuff user:references
 ~~~
 
+and migrate everything:
+
+---IT
 E migriamo tutto
+---
 
 ~~~bash
 rake db:migrate
 ~~~
 
-Definiamo ora le relazioni tra i due modelli:
+Define now the relationships between models:
 
+---IT
+Definiamo ora le relazioni tra i due modelli:
+---
 ~~~ruby
 # app/models/awesome_stuff.rb
 class AwesomeStuff < ActiveRecord::Base
@@ -154,24 +171,32 @@ class User < ActiveRecord::Base
 end
 ~~~
 
-lanciamo la console di Rails con ```rails c``` e inseriamo in DB un po' di dati di test:
+launch the Rails console with ```rails c``` and insert some test data into the DB:
 
+---IT
+lanciamo la console di Rails con ```rails c``` e inseriamo in DB un po' di dati di test:
+---
 ~~~ruby
-# Inseriamo 5 utenti
+# Add five users
 users = []
 5.times {|n| users << User.create(name: "user_#{n}") }
 
-# Associamo in modo random i nostri awesome record™ agli utenti 
+# Randomly associate our awesome records™ to users
 AwesomeStuff.all.each { |aww| aww.update user: users.sample }
 
-# Facciamo un test veloce
+# A rapid test confirms that...
 User.first.awesome_stuffs
 
 => #<ActiveRecord::Associations::CollectionProxy [#<AwesomeStuff id: ... ... >]>
 ~~~
 
+Now that everything is prepared, let's follow some of the steps we'd usually do during an API creation. Let's create a ```UserController``` through which return to the client also user's associated awesome records™.
+Create ```users_controller.rb` under ```app/controllers/v1/``` and add ```index``` action:
+
+---IT
 Adesso che abbiamo preparato tutto percorriamo alcuni dei passi che faremmo normalmente durante la creazione di un API. Andiamo quindi a creare un controller per gli ```User``` attraverso il quale restituiremo al client anche tutti gli awesome records™ associati.
 Creiamo quindi il file ```app/controllers/v1/users_controller.rb``` e iniziamo creando la action ```index```:
+---
 
 ~~~ruby
 # app/controllers/v1/users_controller.rb
@@ -188,8 +213,13 @@ module V1
 end
 ~~~
 
+As you can see I already added some stuff that we'll need in short, that is ```V1::UsersSerializer``` module. If you haven't already, notice the scoping (V1) of our serializers: in doing so we can follow the evolution of our API's versions with no hassles, possibly going to redefine the behavior of only serializers that may change.
+Do not forget to add new routes:
+
+---IT
 Come vedete ho già aggiunto alcune cose che ci serviranno tra poco e cioè il modulo ```V1::UsersSerializer``` che contiene i metodi di serializzazione. Se non lo avete già fatto, notate lo scoping dei nostri serializers (V1): così fancendo possiamo seguire senza problemi l'evoluzione delle versioni delle nostre API, andando eventualmente a ridefinire il comportamento solo dei serializers che dovessero cambiare.
 Non dimentichiamoci di specificare la nuova route:
+---
 
 ~~~ruby
 # config/routes.rb
@@ -206,7 +236,11 @@ Rails.application.routes.draw do
 end
 ~~~
 
+What are we going to add to our ```UsersSerializer```? A first idea should be something like:
+
+---IT
 Cosa mettiamo nel nostro ```UsersSerializer``` ? Una prima idea potrebbe essere qualcosa del tipo:
+---
 
 ~~~ruby
 # app/serializers/v1/users_serializer.rb
@@ -235,7 +269,11 @@ module V1
 end
 ~~~
 
+Ok, but there's a lot of code smell here right? We already saw some of this stuff, let's try to reuse it:
+
+---IT
 C'è un po' di puzza di codice qui, non trovate? Una parte di questa roba l'abbiamo già vista, vediamo di riutilizzarla:
+---
 
 ~~~ruby
 # app/serializers/v1/users_serializer.rb
@@ -261,7 +299,11 @@ module V1
 end
 ~~~
 
+Very well, but we can do better. Our API will probably have a route for a user's data i.e. something like ```/v1/users/1``` so we can move in advance and simultaneously dry up our current code:
+
+---IT
 Molto bene, ma possiamo fare qualcosa di meglio, visto che quasi sicuramente la nostra API avrà anche una route che risponde con i dati relativi ad un utente, cioè qualcosa di simile a ```/v1/users/1``` possiamo portarci avanti con il lavoro, asciugando contemporaneamente il codice attuale:
+---
 
 ~~~ruby
 # app/serializers/v1/users_serializer.rb
@@ -294,9 +336,14 @@ module V1
 end
 ~~~
 
+Ok, we've "just killed two birds with one stone".
+As you'll have noticed it's possible to obtain a further improvement:
+
+---IT
  ---> WARNING ANIMALISTI!!! Ok, we've just killed two birds with one stone.
 
 Avrete già notato che è possibile ottenere un ulteriore miglioramento:
+---
 
 ~~~ruby
 # app/serializers/v1/users_serializer.rb
@@ -323,8 +370,17 @@ module V1
 end
 ~~~
 
+What you've seen so far is a simple example of what it's possibile to do with the tools we already have at hand and mainly wants to be an idea for those wo are constantly looking for the best performances and simplicity.
+
+We got to the end and I hope to not have bored you, but if you come to read up here maybe so :)
+What you have seen today may or may not be liked, but I personally find it a surely performant system that offers pure modularity, extensibility and code reuse.
+
+---IT
+Questo è solo un semplice esempio di quello che è possibile fare con gli strumenti che abbiamo già in mano e vuole essere soprattutto un'idea per chi è alla costante ricerca della massima performance e semplicità.
+
 Siamo arrivati alla fine, spero di non avervi annoiato, ma se siete arrivati a leggere fino a qui forse è così 😊
 Quello che avete visto oggi può o meno piacere, ma personalmente lo trovo un sistema che magari non è super elegante, ma è sicuramente performante e offre una grandissima modularità, estendibilità e riuso.
+---
 
 Feel free to leave a comment, we’d really love to hear your feedback.
 
