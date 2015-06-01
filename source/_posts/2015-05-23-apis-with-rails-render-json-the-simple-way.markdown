@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "APIs with Rails:<br/>render :json => the_simple_way"
-date: 2015-05-23 14:50:41 +0200
+date: 2015-06-01 14:50:41 +0200
 comments: true
 categories: ruby rails api json
 author: Alessandro Verlato (@Aleverla)
