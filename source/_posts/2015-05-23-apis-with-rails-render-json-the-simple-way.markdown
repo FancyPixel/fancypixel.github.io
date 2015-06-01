@@ -8,10 +8,16 @@ author: Alessandro Verlato (@Aleverla)
 published: true
 ---
 
+Lately my work at [Fancy Pixel](http://fancypixel.it) has focused on the backend of a product we're about to launch (link Space Bunny?) and for which we decided to build a JSON API-only server. These APIs can be consumed from third party clients/services but are also used by our frontend. In this short report I'd like to share with you the simple solution that we're using for the JSON generation and that in my humble opinion can be an easy trick alternative to most used systems like e.g. Jbuilder and ActiveModel::Serializers.
+
+--- IT
 Negli ultimi tempi il mio lavoro in Fancy Pixel si è focalizzato sulla realizzazione del backend di un prodotto 
 che stiamo per lanciare (link Space Bunny?) e per il quale abbiamo deciso di realizzare un backend esclusivamente ad API JSON, utilizzate da terzi ma anche dal nostro frontend. In questo breve articolo vorrei condividere con voi la semplice soluzione che stiamo utilizzando per la generazione del JSON di risposta e che a mio avviso può essere un semplice trucchetto alternativo ai sistemi più utilizzati come Jbuilder e ActiveModel::Serializers.
-
+--- 
 <!-- More -->
+
+Let's talk about Rails, one of my favourite work buddies with whom it happened several times to work on projects which included the development of APIs. Due to personal curiosity, during the years I had the opportunity to try several solutions for JSON generation and I have to say that sometimes I found some difficulties with certain tecnologies: wonderful for the majority of their functionalities sometimes they may force you to take weird paths and make forcing to achieve the desired result. To be honest, the main reason for this continuative experimentation is probably the constant search for the top balancing between comfort/easiness/development-speed and performances and after all this test and try I arrived to the current solution
+
 
 Parliamo di Rails, uno dei miei compagni di lavoro preferiti e con il quale mi è capitato parecchie volte di lavorare su progetti che prevedevano lo sviluppo di API. Nel corso degli anni ho avuto occasione di provare per curiosità personale diverse soluzioni per la generazione del JSON di risposta e devo dire che a volte ho trovato delle difficoltà con alcune tecnologie, bellissime per la maggior parte delle loro funzionalità, ma che ti costringono a fare giri strani e forzature in alcuni casi particolari. A dirla tutta probabilmente il motivo principale di questa continua evoluzione è la costante ricerca del miglior bilanciamento fra comodità/facilità/velocità di sviluppo e performance e dopo tutto questo provare, sono arrivato alla soluzione attuale, che probabilmente non è nulla di nuovo, ma che magari a qualcuno può fornire un'idea alternativa che secondo me riesce a combinare insieme grande flessibilità e performance veramente vicine al metallo nudo.  
 
@@ -270,7 +276,7 @@ module V1
 end
 ~~~
 
- ---> ANIMALISTI!!! Ok, we've just killed two birds with one stone.
+ ---> WARNING ANIMALISTI!!! Ok, we've just killed two birds with one stone.
 
 Avrete già notato che è possibile ottenere un ulteriore miglioramento:
 
@@ -299,4 +305,11 @@ module V1
 end
 ~~~
 
-AND NOW?
+Siamo arrivati alla fine, spero di non avervi annoiato, ma se siete arrivati a leggere fino a qui forse è così 😊
+Quello che avete visto oggi può o meno piacere, ma personalmente lo trovo un sistema che magari non è super elegante, ma è sicuramente performante e offre una grandissima modularità, estendibilità e riuso.
+
+Feel free to leave a comment, we’d really love to hear your feedback.
+
+See ya soon!
+
+Alessandro - @madAle
