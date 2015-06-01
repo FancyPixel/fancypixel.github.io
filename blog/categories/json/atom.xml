@@ -1,0 +1,301 @@
+<?xml version="1.0" encoding="utf-8"?>
+<feed xmlns="http://www.w3.org/2005/Atom">
+
+  <title><![CDATA[Category: json | Fancy Pixel]]></title>
+  <link href="http://fancypixel.github.io/blog/categories/json/atom.xml" rel="self"/>
+  <link href="http://fancypixel.github.io/"/>
+  <updated>2015-06-01T22:02:07+02:00</updated>
+  <id>http://fancypixel.github.io/</id>
+  <author>
+    <name><![CDATA[Fancy Pixel]]></name>
+    
+  </author>
+  <generator uri="http://octopress.org/">Octopress</generator>
+
+  
+  <entry>
+    <title type="html"><![CDATA[APIs with Rails:<br/>render :json => the_simple_way]]></title>
+    <link href="http://fancypixel.github.io/blog/2015/05/23/apis-with-rails-render-json-the-simple-way/"/>
+    <updated>2015-05-23T14:50:41+02:00</updated>
+    <id>http://fancypixel.github.io/blog/2015/05/23/apis-with-rails-render-json-the-simple-way</id>
+    <content type="html"><![CDATA[<p>Lately my work at <a href="http://fancypixel.it">Fancy Pixel</a> has focused on the backend of a product we&rsquo;re about to launch and for which we decided to build a JSON API-only server. These APIs can be consumed from third party clients/services but are also used by our frontend. In this short report I&rsquo;d like to share with you the simple solution that we&rsquo;re using for the JSON generation and that in my humble opinion can be a quick and easy alternative to most commonly used systems like <a href="https://github.com/rails/jbuilder">Jbuilder</a> or <a href="https://github.com/rails-api/active_model_serializers">ActiveModel::Serializers</a>.</p>
+
+<!-- More -->
+
+
+<p>Rails, one of my favourite work buddies that I happened to use several times on projects that included the development of APIs. Due to personal curiosity, during the years I had the opportunity to try several solutions for JSON generation and I have to say that sometimes I found some difficulties with certain tecnologies: great for the majority of their functionalities sometimes they may force you to take weird paths to achieve the desired result. To be honest, the main reason for this continuative experimentation is probably the constant search for the top balance between comfort/ease of use/development-speed and performances and after all this test and try I arrived to the current solution, that probably is not something new, but that in my opinion can give somebody an alternative idea combining together great flexibility and bare metal performances.</p>
+
+<h2>To cut a long story short&hellip;</h2>
+
+<p>I don&rsquo;t want to dwell with epic tales or &ldquo;disquisitions about the gender of the Angels&rdquo; so I built a trivial <a href="https://github.com/FancyPixel/serializers_demo">demo app</a> that you can find on our GitHub account, to show you what I&rsquo;m talking about.</p>
+
+<p>Let&rsquo;s rapidly setup our application:</p>
+
+<pre><code class="bash">git clone "https://github.com/FancyPixel/serializers_demo"
+cd serializers_demo
+bundle
+rake db:create &amp;&amp; rake db:migrate &amp;&amp; rake db:seed
+</code></pre>
+
+<p>For the purposes of this article I decided to use <a href="https://github.com/rails-api/rails-api">rails-api</a> (if you don&rsquo;t already know it I reccomend you to give it a try) instead of standard Rails, for the simple fact that this is what we&rsquo;re using right now in the project I mentioned at the beginning of this post. Obviously the same concepts apply identically to <em>vanilla</em> Rails.
+Let&rsquo;s open together the code and take a rapid look at it: as you can see these few lines of source do nothing but respond to three routes and if you take a look at <code>config/routes.rb</code> you&rsquo;ll find something like:</p>
+
+<pre><code class="ruby"># config/routes.rb
+
+Rails.application.routes.draw do
+  namespace :v1, defaults: { format: :json } do
+    get :jbuilder, to: 'comparison#jbuilder'
+    get :ams, to: 'comparison#ams'
+    get :simple, to: 'comparison#simple'
+  end
+end 
+</code></pre>
+
+<p>As you can see I&rsquo;ve set <code>json</code> as the default format and I defined a namespace in such a way to replicate a typical process of APIs versioning.
+Let&rsquo;s jump to the only existing controller (<code>comparison_controller</code>) where we find the implementation of the actions called from the routes. Each of these actions does exactly the same: load a bunch of records from the DB and render it as JSON, but each one does the rendering in its own way i.e. using respectively jbuilder, ActiveModel::Serializers and &ldquo;my solution&rdquo; that I&rsquo;m going to call &ldquo;simple&rdquo;&hellip;  what a fancy name uh?</p>
+
+<p>We&rsquo;re not going to focus on the first two systems, because chances are that you master those tecnologies better than me already and, also, there is nothing out of standard in my implementations, but instead we&rsquo;re jumping feet together to the <code>simple</code> action. Like the competitors, it does nothing more than render some JSON, but this time the <code>serialize_awesome_stuffs</code> helper method is called. This method is defined in the <code>V1::SimpleAwesomeStuffSerializer</code> module that is included by the controller. You can find the module under <code>app/serializers/v1</code> and if you&rsquo;re going to open the file you&rsquo;ll notice that it&rsquo;s just a plain Ruby module defining methods.</p>
+
+<pre><code class="ruby"># app/serializers/v1/simple_awesome_stuff_serializer.rb
+
+module V1
+  module SimpleAwesomeStuffSerializer
+
+    def serialize_awesome_stuff(awesome_stuff = @awesome_stuff)
+      {
+          name: awesome_stuff.name,
+          some_attribute: awesome_stuff.some_attribute,
+          a_counter: awesome_stuff.a_counter
+      }
+    end
+
+    def serialize_awesome_stuffs(awesome_stuffs = @awesome_stuffs)
+      {
+          awesome_stuffs: awesome_stuffs.map do |awesome|
+            serialize_awesome_stuff awesome
+          end
+      }
+    end
+  end
+end
+</code></pre>
+
+<p>Both the methods do nothing more that returning an Hash defining key-values couples that we&rsquo;re willing to return as JSON. In particular <code>serialize_awesome_stuffs</code> creates an <code>Array</code> of <code>Hash</code> and internally, just for DRYing things up a bit, calls <code>serialize_awesome_stuff</code> (singular). Maybe the overall naming is not the best in the world, uh? Bonus point: defining the method&rsquo;s parameter <code>awesome_stuffs = @awesome_stuffs</code> allows us to make our code lighter and more readable, because if we remained adherent to conventional variable naming, probably our controller is defining something like <code>@awesome_stuff</code> (and as a matter of fact, we did) that is directly visible and usable by our module. If we&rsquo;re going to have a bout of creativity and want to use our personal variables names, we won&rsquo;t have any sort of problem.</p>
+
+<p>Take this piece of code as example:</p>
+
+<pre><code class="ruby"># some_controller.rb
+
+def some_action
+  @my_personal_awesome_stuffs = AwesomeStuff.all
+  render json: serialize_awesome_stuffs @my_personal_awesome_stuffs
+end
+</code></pre>
+
+<p>and everything will work as expected.</p>
+
+<h2>Step-by-step: let&rsquo;s complicate things a bit</h2>
+
+<p>Let&rsquo;s raise a bit the complexity of our example, adding a <code>User</code> model and defining a one-to-many relationship with our <code>AwesomeStuff</code>:</p>
+
+<pre><code class="bash">rails g model user name:string
+</code></pre>
+
+<p>add the <code>User</code> reference in <code>AwesomeStuff</code>:</p>
+
+<pre><code class="bash">rails g migration add_user_reference_to_awesome_stuff user:references
+</code></pre>
+
+<p>and migrate everything:</p>
+
+<pre><code class="bash">rake db:migrate
+</code></pre>
+
+<p>Define now the relationships between models:</p>
+
+<pre><code class="ruby"># app/models/awesome_stuff.rb
+class AwesomeStuff &lt; ActiveRecord::Base
+  belongs_to :user
+end
+
+# app/models/user.rb
+class User &lt; ActiveRecord::Base
+  has_many :awesome_stuffs
+end
+</code></pre>
+
+<p>launch the Rails console with <code>rails c</code> and insert some test data into the DB:</p>
+
+<pre><code class="ruby"># Add five users
+users = []
+5.times {|n| users &lt;&lt; User.create(name: "user_#{n}") }
+
+# Randomly associate our awesome records™ to users
+AwesomeStuff.all.each { |aww| aww.update user: users.sample }
+
+# A rapid test confirms that...
+User.first.awesome_stuffs
+
+=&gt; #&lt;ActiveRecord::Associations::CollectionProxy [#&lt;AwesomeStuff id: ... ... &gt;]&gt;
+</code></pre>
+
+<p>Now that everything is prepared, let&rsquo;s follow some of the steps we&rsquo;d usually do during an API creation. Let&rsquo;s create a <code>UserController</code> through which return to the client also user&rsquo;s associated awesome records™.
+Create <code>users_controller.rb` under</code>app/controllers/v1/<code>and add</code>index&#8220;` action:</p>
+
+<pre><code class="ruby"># app/controllers/v1/users_controller.rb
+
+module V1
+  class UsersController &lt; ApplicationController
+    include V1::UsersSerializer
+
+    def index
+      @users = User.all.includes(:awesome_stuffs)
+      render json: serialize_users
+    end
+  end
+end
+</code></pre>
+
+<p>As you can see I already added some stuff that we&rsquo;ll need in short, that is the <code>V1::UsersSerializer</code> module. If you haven&rsquo;t already, notice the scoping (V1) of our serializers: in doing so we can follow the evolution of our API&rsquo;s versions with no hassles, possibly going to redefine the behavior of only serializers that may change.
+Do not forget to add new routes:</p>
+
+<pre><code class="ruby"># config/routes.rb
+
+Rails.application.routes.draw do
+  namespace :v1, defaults: { format: :json } do
+    get :jbuilder, to: 'comparison#jbuilder'
+    get :ams, to: 'comparison#ams'
+    get :simple, to: 'comparison#simple'
+
+    # Let's add the 'index' only
+    resources :users, only: :index
+  end
+end
+</code></pre>
+
+<p>What are we going to add to our <code>UsersSerializer</code>? A first idea should be something like:</p>
+
+<pre><code class="ruby"># app/serializers/v1/users_serializer.rb
+
+module V1
+  module UsersSerializer
+
+    def serialize_users(users = @users)
+      {
+        users: users.map do |user|
+          {
+              id: user.id,
+              name: user.name,
+              awesome_stuffs: user.awesome_stuffs.map do |aww|
+                {
+                    name: aww.name,
+                    some_attribute: aww.some_attribute,
+                    a_counter: aww.a_counter
+                }
+              end
+          }
+        end
+      }
+    end
+  end
+end
+</code></pre>
+
+<p>Ok, but there&rsquo;s a lot of code smell here right? We already saw some of this stuff, let&rsquo;s try to reuse it:</p>
+
+<pre><code class="ruby"># app/serializers/v1/users_serializer.rb
+
+module V1
+  module UsersSerializer
+    include V1::SimpleAwesomeStuffSerializer
+
+    def serialize_users(users = @users)
+      {
+        users: users.map do |user|
+          {
+              id: user.id,
+              name: user.name,
+              awesome_stuffs: user.awesome_stuffs.map do |aww|
+                serialize_awesome_stuff aww
+              end
+          }
+        end
+      }
+    end
+  end
+end
+</code></pre>
+
+<p>Very well, but we can do better. Our API will probably have a route for a user&rsquo;s data i.e. something like <code>/v1/users/1</code> so we can move in advance and simultaneously dry up our current code:</p>
+
+<pre><code class="ruby"># app/serializers/v1/users_serializer.rb
+
+module V1
+  module UsersSerializer
+    include V1::SimpleAwesomeStuffSerializer
+
+    def serialize_user(user = @user)
+      {
+          id: user.id,
+          name: user.name,
+      }
+    end
+
+    def serialize_users(users = @users)
+      {
+        users: users.map do |user|
+          serialize_user(user).merge(
+            {
+                awesome_stuffs: user.awesome_stuffs.map do |aww|
+                  serialize_awesome_stuff aww
+                end
+            }
+          )
+        end
+      }
+    end
+  end
+end
+</code></pre>
+
+<p>Ok, we&rsquo;ve just &ldquo;killed two birds with one stone&rdquo;. (the birds are doing well, don&rsquo;t worry)
+As you&rsquo;ll have noticed it&rsquo;s possible to obtain a further improvement:</p>
+
+<pre><code class="ruby"># app/serializers/v1/users_serializer.rb
+
+module V1
+  module UsersSerializer
+    include V1::SimpleAwesomeStuffSerializer
+
+    def serialize_user(user = @user)
+      {
+          id: user.id,
+          name: user.name
+      }
+    end
+
+    def serialize_users(users = @users)
+      {
+        users: users.map do |user|
+          serialize_user(user).merge(serialize_awesome_stuffs(user.awesome_stuffs))
+        end
+      }
+    end
+  end
+end
+</code></pre>
+
+<p>What you&rsquo;ve seen so far is a simple example of what it&rsquo;s possibile to do with the tools we already have at hand and mainly wants to be an idea for those wo are constantly looking for the best performances and simplicity.</p>
+
+<p>We reached the end and I hope I have not bored you too much, but if you got to this point, I probably didn&rsquo;t :)
+What you have seen today may or may not be liked, but I personally find it a surely performant system that offers pure modularity, extensibility and code reuse.</p>
+
+<p>Feel free to leave a comment, we’d really love to hear your feedback.</p>
+
+<p>See ya soon!</p>
+
+<p>Alessandro - <a href="https://twitter.com/Aleverla">@Aleverla</a></p>
+]]></content>
+  </entry>
+  
+</feed>
