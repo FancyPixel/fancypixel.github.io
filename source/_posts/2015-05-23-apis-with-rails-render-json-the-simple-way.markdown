@@ -291,7 +291,7 @@ end
 
 What you've seen so far is a simple example of what it's possibile to do with the tools we already have at hand and mainly wants to be an idea for those wo are constantly looking for the best performances and simplicity.
 
-We reached the end and I hope didn't bore you too much, but if you got to this point, I probably didn't :)
+We reached the end and I hope I have not bored you too much, but if you got to this point, I probably didn't :)
 What you have seen today may or may not be liked, but I personally find it a surely performant system that offers pure modularity, extensibility and code reuse.
 
 Feel free to leave a comment, we’d really love to hear your feedback.
