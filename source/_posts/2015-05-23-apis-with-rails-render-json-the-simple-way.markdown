@@ -336,7 +336,7 @@ module V1
 end
 ~~~
 
-Ok, we've "just killed two birds with one stone".
+Ok, we've just "killed two birds with one stone". (the birds are doing well, don't worry)
 As you'll have noticed it's possible to obtain a further improvement:
 
 ---IT
