@@ -5,10 +5,9 @@ date: 2015-05-23 14:50:41 +0200
 comments: true
 categories: ruby rails api json
 author: Alessandro Verlato (@Aleverla)
-published: true
 ---
 
-Lately my work at [Fancy Pixel](http://fancypixel.it) has focused on the backend of a product we're about to launch (link Space Bunny?) and for which we decided to build a JSON API-only server. These APIs can be consumed from third party clients/services but are also used by our frontend. In this short report I'd like to share with you the simple solution that we're using for the JSON generation and that in my humble opinion can be a quick and easy alternative to most commonly used systems like Jbuilder or ActiveModel::Serializers.
+Lately my work at [Fancy Pixel](http://fancypixel.it) has focused on the backend of a product we're about to launch and for which we decided to build a JSON API-only server. These APIs can be consumed from third party clients/services but are also used by our frontend. In this short report I'd like to share with you the simple solution that we're using for the JSON generation and that in my humble opinion can be a quick and easy alternative to most commonly used systems like [Jbuilder](https://github.com/rails/jbuilder) or [ActiveModel::Serializers](https://github.com/rails-api/active_model_serializers).
 
 <!-- More -->
 
@@ -298,4 +297,4 @@ Feel free to leave a comment, we’d really love to hear your feedback.
 
 See ya soon!
 
-Alessandro - @Aleverla
+Alessandro - [@Aleverla](https://twitter.com/Aleverla)
