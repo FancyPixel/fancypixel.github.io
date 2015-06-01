@@ -27,7 +27,7 @@ bundle
 rake db:create && rake db:migrate && rake db:seed
 ~~~
 
-For the purposes of this article I decided to use [rails-api](https://github.com/rails-api/rails-api) (if you don't already know it I reccomend you to give it a try) instead of standard Rails, for the simple fact that this is what we're using right now in the project I mentioned at the beginning of this post. Obviously the same concepts apply identical to "pure" Rails.
+For the purposes of this article I decided to use [rails-api](https://github.com/rails-api/rails-api) (if you don't already know it I reccomend you to give it a try) instead of standard Rails, for the simple fact that this is what we're using right now in the project I mentioned at the beginning of this post. Obviously the same concepts apply identically to _vanilla_ Rails.
 Let's open together the code and let's take a rapid look at it: as you can see these few lines of source do nothing but respond to three routes and if you take a look at ```config/routes.rb``` you'll find something like:
 
 ~~~ruby
