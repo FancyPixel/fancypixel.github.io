@@ -270,7 +270,7 @@ module V1
 end
 ~~~
 
- ---> ANIMALISTI!!! Ok, we've just killed two birds with one stone.
+ ---> WARNING ANIMALISTI!!! Ok, we've just killed two birds with one stone.
 
 Avrete già notato che è possibile ottenere un ulteriore miglioramento:
 
@@ -299,4 +299,11 @@ module V1
 end
 ~~~
 
-AND NOW?
+Siamo arrivati alla fine, spero di non avervi annoiato, ma se siete arrivati a leggere fino a qui forse è così 😊
+Quello che avete visto oggi può o meno piacere, ma personalmente lo trovo un sistema che magari non è super elegante, ma è sicuramente performante e offre una grandissima modularità, estendibilità e riuso.
+
+Feel free to leave a comment, we’d really love to hear your feedback.
+
+See ya soon!
+
+Alessandro - @madAle
