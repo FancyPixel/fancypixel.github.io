@@ -10,29 +10,15 @@ published: true
 
 Lately my work at [Fancy Pixel](http://fancypixel.it) has focused on the backend of a product we're about to launch (link Space Bunny?) and for which we decided to build a JSON API-only server. These APIs can be consumed from third party clients/services but are also used by our frontend. In this short report I'd like to share with you the simple solution that we're using for the JSON generation and that in my humble opinion can be an easy trick alternative to most used systems like e.g. Jbuilder and ActiveModel::Serializers.
 
----IT
-Negli ultimi tempi il mio lavoro in Fancy Pixel si è focalizzato sulla realizzazione del backend di un prodotto 
-che stiamo per lanciare (link Space Bunny?) e per il quale abbiamo deciso di realizzare un backend esclusivamente ad API JSON, utilizzate da terzi ma anche dal nostro frontend. In questo breve articolo vorrei condividere con voi la semplice soluzione che stiamo utilizzando per la generazione del JSON di risposta e che a mio avviso può essere un semplice trucchetto alternativo ai sistemi più utilizzati come Jbuilder e ActiveModel::Serializers.
---- 
 <!-- More -->
 
 Rails, one of my favourite work buddies with which it happened several times to work on projects which included the development of APIs. Due to personal curiosity, during the years I had the opportunity to try several solutions for JSON generation and I have to say that sometimes I found some difficulties with certain tecnologies: wonderful for the majority of their functionalities sometimes they may force you to take weird paths and make forcing to achieve the desired result. To be honest, the main reason for this continuative experimentation is probably the constant search for the top balancing between comfort/easiness/development-speed and performances and after all this test and try I arrived to the current solution, that probably is not nothing new, but that in my opinion can maybe give somebody an alternative idea combining together great flexibility and bare metal performances.
 
----IT
-Rails, uno dei miei compagni di lavoro preferiti e con il quale mi è capitato parecchie volte di lavorare su progetti che prevedevano lo sviluppo di API. Nel corso degli anni ho avuto occasione di provare per curiosità personale diverse soluzioni per la generazione del JSON di risposta e devo dire che a volte ho trovato delle difficoltà con alcune tecnologie, bellissime per la maggior parte delle loro funzionalità, ma che ti costringono a fare giri strani e forzature in alcuni casi particolari. A dirla tutta probabilmente il motivo principale di questa continua evoluzione è la costante ricerca del miglior bilanciamento fra comodità/facilità/velocità di sviluppo e performance e dopo tutto questo provare, sono arrivato alla soluzione attuale, che probabilmente non è nulla di nuovo, ma che magari a qualcuno può fornire un'idea alternativa che secondo me riesce a combinare insieme grande flessibilità e performance veramente vicine al metallo nudo.  
---- 
 ## To cut a long story short... 
 
 I don't want to dwell with epic tales or "disquisitions about the gender of the Angels" so I built a trivial [demo app](https://github.com/FancyPixel/serializers_demo) that you can find on our GitHub account, with which show you what I'm talking about.
 
 Let's rapidly setup our application:
-
----IT
-Non mi voglio dilungare in racconti epici o disquisizioni sul sesso degli Angeli (offensivo per some 'MMMuricans?) e quindi ho preparato una banale [applicazione demo](https://github.com/FancyPixel/serializers_demo), che potete trovare 
-sul nostro account GitHub, con la quale mostrare velocemente di cosa sto parlando.
-
-Setuppiamo velocemente l'applicazione:
----
 
 ~~~bash
 git clone "https://github.com/FancyPixel/serializers_demo"
@@ -44,10 +30,6 @@ rake db:create && rake db:migrate && rake db:seed
 For the purposes of this article I decided to use [rails-api](https://github.com/rails-api/rails-api) (if you don't already know it I reccomend you to give it a try) instead of standard Rails, for the simple fact that this is what we're using right now in the project I talked to you at the beginning of this article. Obviously the same concepts apply identical to "pure" Rails.
 Let's open together the code and let's take a rapid look on it: as you can see these few lines of source do nothing but respond to three routes and if you throw a look at ```config/routes.rb``` you'll find something like:
 
----IT
-Ho deciso di utilizzare [rails-api](https://github.com/rails-api/rails-api) (se non lo conoscete vi consiglio di dargli un'occhiata) al posto di Rails standard per il semplice fatto che è quello che sto utilizzando anche io nel progetto di cui vi parlavo all'inizio dell'articolo , ma ovviamente gli stessi discorsi valgono identici per Rails standard. 
-Apriamo insieme il codice e diamogli un'occhiata veloce: come potete vedere queste poche righe di sorgente non fanno altro che rispondere a tre rotte e se buttate uno sguardo al file ```config/routes.rb``` troverete qualcosa del tipo:
----
 ~~~ruby
 # config/routes.rb
 
@@ -63,15 +45,7 @@ end
 As you can see I've set ```json``` as default format and I defined a namespace in such a way to replicate a typical process of APIs versioning.
 Let's jump to the only existing controller (```comparison_controller```) where we find the implementation of the actions called from the routes. Each of these actions does exactly the same: load a bunch of records from the DB and render it as JSON, but each one does the rendering in his own way i.e. using respectively jbuilder, ActiveModel::Serializers and "my solution" that I'm going to call "simple"...  what a fancy name uh?
 
----IT
-Come vedete ho impostato ```json``` come formato di default e ho definito un namespace per replicare un tipico modo di versionare un API.
-Passiamo velocemente all'unico controller presente (```comparison_controller```) dove troviamo l'implementazione delle action richiamate dalle routes. Ognuna di queste fa esattamente la stessa cosa: carica una serie di record dal DB e li renderizza come JSON, ma ognuna lo fa "a modo suo", cioè utilizzando rispettivamente jbuilder, ActiveModel::Serializers e la mia idea soluzione che ho chiamato "simple"... che fantasia eh?
----
-
 We're not going to focus on the first two systems, because chances are that you master those tecnologies better than me and for more there isn't nothing out of stantard in my implementations, but instead we're jumping feet together to the ```simple``` action. As for competitors before, she doesn't nothing but render some JSON, but this calling ```serialize_awesome_stuffs``` in help. This method is defined in the ```V1::SimpleAwesomeStuffSerializer``` module that is included by the controller. You can find the module under ```app/serializers/v1``` and if you're going to open the file you'll notice that it's nothing but a normal Ruby module defining methods.
-
----IT
-Non ci soffermiamo sui primi due sistemi, in quanto probabilmente li conoscete meglio di me e non hanno nulla di fuori standard nella mia implementazione. Passiamo direttamente alla action ```simple```. Come per i concorrenti prima di lei, non fa altro che renderizzare del JSON, ma questa volta chiamando in aiuto il metodo ```serialize_awesome_stuffs``` definito nel modulo ```V1::SimpleAwesomeStuffSerializer``` che è importato dal controller. Trovate il modulo sotto la cartella ```app/serializers/v1``` e se lo aprite noterete che altro non è se non un normalissimo modulo che definisce dei metodi. Diamo un'occhiata insieme al contenuto
 
 ~~~ruby
 # app/serializers/v1/simple_awesome_stuff_serializer.rb
@@ -102,13 +76,6 @@ Both the methods do nothing more that returning an Hash defining key-values coup
 
 Take this piece of code as example:
 
-
----IT
-Come vedete entrambi i metodi non fanno altro che ritornare Hash con definite le coppie chiave - valore che, inutile dirlo, vogliamo ritornare come JSON. In particolare ```serialize_awesome_stuffs``` crea un ```Array``` di ```Hash``` e internamente, per "DRYing up" chiama ```serialize_awesome_stuff``` (singular). Forse la scelta dei nomi non è delle più felici vero?  Bonus point: definendo il parametro ```awesome_stuffs = @awesome_stuffs``` ci permette di rendere ancora più 'leggero' e leggibile il nostro codice in quanto se siamo rimasti aderenti al naming convenzionale delle variabili, probabilmente il nostro controller avrà definito qualcosa come  ```@awesome_stuff``` (e avete visto che lo abbiamo fatto) che è direttamente visibile ed utilizzabile dal nostro metodo, avendo incluso il modulo nel controller. Nel caso però ci venisse un attacco di creatività e volessimo utilizzare dei nomi di variabili personalizzati, non avremmo nessun problema.
-
-Prendete ad esempio questo pezzo di codice:
----
-
 ~~~ruby
 # some_controller.rb
 
@@ -120,15 +87,9 @@ end
 
 and everything will work as expected.
 
------ Seconda parte? ------
-
 ## Step-by-step: let's complicate things a bit 
 
 Let's go together raise a bit the complexity of our example, adding a ```User``` model and defining a one-to-many relationship with our AwesomeStuff:
-
----IT
-Andiamo insieme ad aumentare un po' la complessità al nostro esempio, aggiungendo il modello ```User``` e definendo una relazione one-to-many con il nostro AwesomeStuff:
----
 
 ~~~bash
 rails g model user name:string
@@ -136,19 +97,11 @@ rails g model user name:string
 
 add the User reference in AwesomeStuff:
 
----IT
-Aggiungiamo la reference a User in AwesomeStuff:
----
-
 ~~~bash
 rails g migration add_user_reference_to_awesome_stuff user:references
 ~~~
 
 and migrate everything:
-
----IT
-E migriamo tutto
----
 
 ~~~bash
 rake db:migrate
@@ -156,9 +109,6 @@ rake db:migrate
 
 Define now the relationships between models:
 
----IT
-Definiamo ora le relazioni tra i due modelli:
----
 ~~~ruby
 # app/models/awesome_stuff.rb
 class AwesomeStuff < ActiveRecord::Base
@@ -173,9 +123,6 @@ end
 
 launch the Rails console with ```rails c``` and insert some test data into the DB:
 
----IT
-lanciamo la console di Rails con ```rails c``` e inseriamo in DB un po' di dati di test:
----
 ~~~ruby
 # Add five users
 users = []
@@ -192,11 +139,6 @@ User.first.awesome_stuffs
 
 Now that everything is prepared, let's follow some of the steps we'd usually do during an API creation. Let's create a ```UserController``` through which return to the client also user's associated awesome records™.
 Create ```users_controller.rb` under ```app/controllers/v1/``` and add ```index``` action:
-
----IT
-Adesso che abbiamo preparato tutto percorriamo alcuni dei passi che faremmo normalmente durante la creazione di un API. Andiamo quindi a creare un controller per gli ```User``` attraverso il quale restituiremo al client anche tutti gli awesome records™ associati.
-Creiamo quindi il file ```app/controllers/v1/users_controller.rb``` e iniziamo creando la action ```index```:
----
 
 ~~~ruby
 # app/controllers/v1/users_controller.rb
@@ -216,11 +158,6 @@ end
 As you can see I already added some stuff that we'll need in short, that is ```V1::UsersSerializer``` module. If you haven't already, notice the scoping (V1) of our serializers: in doing so we can follow the evolution of our API's versions with no hassles, possibly going to redefine the behavior of only serializers that may change.
 Do not forget to add new routes:
 
----IT
-Come vedete ho già aggiunto alcune cose che ci serviranno tra poco e cioè il modulo ```V1::UsersSerializer``` che contiene i metodi di serializzazione. Se non lo avete già fatto, notate lo scoping dei nostri serializers (V1): così fancendo possiamo seguire senza problemi l'evoluzione delle versioni delle nostre API, andando eventualmente a ridefinire il comportamento solo dei serializers che dovessero cambiare.
-Non dimentichiamoci di specificare la nuova route:
----
-
 ~~~ruby
 # config/routes.rb
 
@@ -237,10 +174,6 @@ end
 ~~~
 
 What are we going to add to our ```UsersSerializer```? A first idea should be something like:
-
----IT
-Cosa mettiamo nel nostro ```UsersSerializer``` ? Una prima idea potrebbe essere qualcosa del tipo:
----
 
 ~~~ruby
 # app/serializers/v1/users_serializer.rb
@@ -271,10 +204,6 @@ end
 
 Ok, but there's a lot of code smell here right? We already saw some of this stuff, let's try to reuse it:
 
----IT
-C'è un po' di puzza di codice qui, non trovate? Una parte di questa roba l'abbiamo già vista, vediamo di riutilizzarla:
----
-
 ~~~ruby
 # app/serializers/v1/users_serializer.rb
 
@@ -300,10 +229,6 @@ end
 ~~~
 
 Very well, but we can do better. Our API will probably have a route for a user's data i.e. something like ```/v1/users/1``` so we can move in advance and simultaneously dry up our current code:
-
----IT
-Molto bene, ma possiamo fare qualcosa di meglio, visto che quasi sicuramente la nostra API avrà anche una route che risponde con i dati relativi ad un utente, cioè qualcosa di simile a ```/v1/users/1``` possiamo portarci avanti con il lavoro, asciugando contemporaneamente il codice attuale:
----
 
 ~~~ruby
 # app/serializers/v1/users_serializer.rb
@@ -339,12 +264,6 @@ end
 Ok, we've just "killed two birds with one stone". (the birds are doing well, don't worry)
 As you'll have noticed it's possible to obtain a further improvement:
 
----IT
- ---> WARNING ANIMALISTI!!! Ok, we've just killed two birds with one stone.
-
-Avrete già notato che è possibile ottenere un ulteriore miglioramento:
----
-
 ~~~ruby
 # app/serializers/v1/users_serializer.rb
 
@@ -374,13 +293,6 @@ What you've seen so far is a simple example of what it's possibile to do with th
 
 We got to the end and I hope to not have bored you, but if you come to read up here maybe so :)
 What you have seen today may or may not be liked, but I personally find it a surely performant system that offers pure modularity, extensibility and code reuse.
-
----IT
-Questo è solo un semplice esempio di quello che è possibile fare con gli strumenti che abbiamo già in mano e vuole essere soprattutto un'idea per chi è alla costante ricerca della massima performance e semplicità.
-
-Siamo arrivati alla fine, spero di non avervi annoiato, ma se siete arrivati a leggere fino a qui forse è così 😊
-Quello che avete visto oggi può o meno piacere, ma personalmente lo trovo un sistema che magari non è super elegante, ma è sicuramente performante e offre una grandissima modularità, estendibilità e riuso.
----
 
 Feel free to leave a comment, we’d really love to hear your feedback.
 
