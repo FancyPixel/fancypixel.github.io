@@ -12,7 +12,7 @@ Lately my work at [Fancy Pixel](http://fancypixel.it) has focused on the backend
 
 <!-- More -->
 
-Rails, one of my favourite work buddies with which I happened to use several times on projects that included the development of APIs. Due to personal curiosity, during the years I had the opportunity to try several solutions for JSON generation and I have to say that sometimes I found some difficulties with certain tecnologies: great for the majority of their functionalities sometimes they may force you to take weird paths to achieve the desired result. To be honest, the main reason for this continuative experimentation is probably the constant search for the top balance between comfort/ease of use/development-speed and performances and after all this test and try I arrived to the current solution, that probably is not something new, but that in my opinion can give somebody an alternative idea combining together great flexibility and bare metal performances.
+Rails, one of my favourite work buddies that I happened to use several times on projects that included the development of APIs. Due to personal curiosity, during the years I had the opportunity to try several solutions for JSON generation and I have to say that sometimes I found some difficulties with certain tecnologies: great for the majority of their functionalities sometimes they may force you to take weird paths to achieve the desired result. To be honest, the main reason for this continuative experimentation is probably the constant search for the top balance between comfort/ease of use/development-speed and performances and after all this test and try I arrived to the current solution, that probably is not something new, but that in my opinion can give somebody an alternative idea combining together great flexibility and bare metal performances.
 
 ## To cut a long story short... 
 
@@ -28,7 +28,7 @@ rake db:create && rake db:migrate && rake db:seed
 ~~~
 
 For the purposes of this article I decided to use [rails-api](https://github.com/rails-api/rails-api) (if you don't already know it I reccomend you to give it a try) instead of standard Rails, for the simple fact that this is what we're using right now in the project I mentioned at the beginning of this post. Obviously the same concepts apply identically to _vanilla_ Rails.
-Let's open together the code and let's take a rapid look at it: as you can see these few lines of source do nothing but respond to three routes and if you take a look at ```config/routes.rb``` you'll find something like:
+Let's open together the code and take a rapid look at it: as you can see these few lines of source do nothing but respond to three routes and if you take a look at ```config/routes.rb``` you'll find something like:
 
 ~~~ruby
 # config/routes.rb
@@ -43,9 +43,9 @@ end
 ~~~
 
 As you can see I've set ```json``` as the default format and I defined a namespace in such a way to replicate a typical process of APIs versioning.
-Let's jump to the only existing controller (```comparison_controller```) where we find the implementation of the actions called from the routes. Each of these actions does exactly the same: load a bunch of records from the DB and render it as JSON, but each one does the rendering in its own way i.e. using respectively jbuilder, ActiveModel::Serializers and "my solution" that I'm going to call "simple"...  what a fancy name uh?
+Let's jump to the only existing controller (```comparison_controller```) where we find the implementation of the actions called from the routes. Each of these actions does exactly the same: load a bunch of records from the DB and render it as JSON, but each one does the rendering in its own way i.e. using respectively jbuilder, ActiveModel::Serializers and "my solution" that I'm going to call "simple"...  what a fancy name uh?  
 
-We're not going to focus on the first two systems, because chances are that you master those tecnologies better than me and, also, there is nothing out of stantard in my implementations, but instead we're jumping feet together to the ```simple``` action. As for the competitors, it does nothing more than rendering some JSON, but this time the ```serialize_awesome_stuffs``` helper method is called. This method is defined in the ```V1::SimpleAwesomeStuffSerializer``` module that is included by the controller. You can find the module under ```app/serializers/v1``` and if you're going to open the file you'll notice that it's nothing but a normal Ruby module defining methods.
+We're not going to focus on the first two systems, because chances are that you master those tecnologies better than me already and, also, there is nothing out of standard in my implementations, but instead we're jumping feet together to the ```simple``` action. Like the competitors, it does nothing more than render some JSON, but this time the ```serialize_awesome_stuffs``` helper method is called. This method is defined in the ```V1::SimpleAwesomeStuffSerializer``` module that is included by the controller. You can find the module under ```app/serializers/v1``` and if you're going to open the file you'll notice that it's just a plain Ruby module defining methods.
 
 ~~~ruby
 # app/serializers/v1/simple_awesome_stuff_serializer.rb
