@@ -4,7 +4,7 @@
   <title><![CDATA[Category: swift | Fancy Pixel]]></title>
   <link href="http://fancypixel.github.io/blog/categories/swift/atom.xml" rel="self"/>
   <link href="http://fancypixel.github.io/"/>
-  <updated>2015-06-11T15:33:45+02:00</updated>
+  <updated>2015-06-11T15:37:07+02:00</updated>
   <id>http://fancypixel.github.io/</id>
   <author>
     <name><![CDATA[Fancy Pixel]]></name>
@@ -18,7 +18,8 @@
     <link href="http://fancypixel.github.io/blog/2015/06/11/ios9-notifications-and-text-input/"/>
     <updated>2015-06-11T11:03:06+02:00</updated>
     <id>http://fancypixel.github.io/blog/2015/06/11/ios9-notifications-and-text-input</id>
-    <content type="html"><![CDATA[<p>When iOS8 opened the API to have actionable notifications many of us were disappointed that the text input action used in Messages wasn&rsquo;t available. It turns out that with iOS9 this API is now public, although as I&rsquo;m writing this the documentation doesn&rsquo;t mention it. After some digging in the UIKit changelog I was able to build a sample making use of this new behavior. Like with iOS8 the NDA is more relaxed this year, but I won&rsquo;t be able to show screenshots, anyway you&rsquo;ll find the full sample <a href="https://github.com/FancyPixel/text-notification-sample">here</a>.<br/>
+    <content type="html"><![CDATA[<p>When iOS8 opened the API to have actionable notifications many of us were disappointed that the text input action used in Messages wasn&rsquo;t available. It turns out that with iOS9 this API is now public, although as I&rsquo;m writing this the documentation doesn&rsquo;t mention it. After some digging in the UIKit changelog I was able to build a sample making use of this new behavior.<br/>
+Like with iOS8 the NDA is more relaxed this year, but it still forbids showing screenshots. In any case, you&rsquo;ll find the full sample <a href="https://github.com/FancyPixel/text-notification-sample">on GitHub</a>.<br/>
 Let&rsquo;s take a step by step look at what changed.</p>
 
 <!-- More -->
