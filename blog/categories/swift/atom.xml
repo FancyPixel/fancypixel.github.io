@@ -4,7 +4,7 @@
   <title><![CDATA[Category: swift | Fancy Pixel]]></title>
   <link href="http://fancypixel.github.io/blog/categories/swift/atom.xml" rel="self"/>
   <link href="http://fancypixel.github.io/"/>
-  <updated>2015-06-01T22:12:35+02:00</updated>
+  <updated>2015-06-11T12:12:36+02:00</updated>
   <id>http://fancypixel.github.io/</id>
   <author>
     <name><![CDATA[Fancy Pixel]]></name>
@@ -12,6 +12,100 @@
   </author>
   <generator uri="http://octopress.org/">Octopress</generator>
 
+  
+  <entry>
+    <title type="html"><![CDATA[iOS9 notifications and Text Input]]></title>
+    <link href="http://fancypixel.github.io/blog/2015/06/11/ios9-notifications-and-text-input/"/>
+    <updated>2015-06-11T11:03:06+02:00</updated>
+    <id>http://fancypixel.github.io/blog/2015/06/11/ios9-notifications-and-text-input</id>
+    <content type="html"><![CDATA[<p>When iOS8 opened the API to have actionable notifications many of us were disappointed that the text input action used in Messages wasn&rsquo;t available. It turns out that with iOS9 this API is now public, although as I&rsquo;m writing this the documentation doesn&rsquo;t mention it. After some digging in the UIKit changelog I was able to build a sample making use of this new behavior. You find the full sample <a href="https://github.com/FancyPixel/text-notification-sample">here</a>.<br/>
+Let&rsquo;s take a step by step look at what changed.</p>
+
+<!-- More -->
+
+
+<h1>Requesting the permission</h1>
+
+<p>First of all we need to ask the permission to the user before we can start sending notifications. We start off by building a new <code>UIMutableUserNotificationAction</code>, that alongside the main properties of the notification will also specify the desired behavior:</p>
+
+<pre><code class="swift">let textAction = UIMutableUserNotificationAction()
+textAction.identifier = "TEXT_ACTION"
+textAction.title = "Reply"
+textAction.activationMode = .Background
+textAction.authenticationRequired = false
+textAction.destructive = false
+textAction.behavior = .TextInput
+</code></pre>
+
+<p>The <code>behavior</code> property is a new addition of iOS9 and holds the <code>UIUserNotificationActionBehavior</code> enum:</p>
+
+<pre><code class="swift">enum UIUserNotificationActionBehavior : UInt {
+  case Default // the default action behavior
+  case TextInput // system provided action behavior, allows text input from the user
+}
+</code></pre>
+
+<p>With that out of the way the rest of the configuration didn&rsquo;t change much from iOS8:</p>
+
+<pre><code class="swift">let category = UIMutableUserNotificationCategory()
+category.identifier = "CATEGORY_ID"
+category.setActions([textAction], forContext: .Default)
+category.setActions([textAction], forContext: .Minimal)
+
+let categories = NSSet(object: category) as! Set&lt;UIUserNotificationCategory&gt;
+let settings = UIUserNotificationSettings(forTypes: [.Alert, .Badge, .Sound], categories: categories)
+UIApplication.sharedApplication().registerUserNotificationSettings(settings)
+</code></pre>
+
+<p>One minor difference here is due to the new Swift 2 syntax, instead of:</p>
+
+<pre><code class="swift">UIUserNotificationType.Alert | UIUserNotificationType.Sound | UIUserNotificationType.Badge
+</code></pre>
+
+<p>we need to use the much nicer</p>
+
+<pre><code class="swift">[.Alert, .Sound, .Badge]
+</code></pre>
+
+<p>That&rsquo;s it, once the user grants the permission we can schedule a new local notification to test this out:</p>
+
+<pre><code class="swift">static func scheduleNotification() {
+    let now: NSDateComponents = NSCalendar.currentCalendar().components([.Hour, .Minute], fromDate: NSDate())
+
+    let cal = NSCalendar(calendarIdentifier: NSCalendarIdentifierGregorian)!
+    let date = cal.dateBySettingHour(now.hour, minute: now.minute + 1, second: 0, ofDate: NSDate(), options: NSCalendarOptions())
+    let reminder = UILocalNotification()
+    reminder.fireDate = date
+    reminder.alertBody = "You can now reply with text"
+    reminder.alertAction = "Cool"
+    reminder.soundName = "sound.aif"
+    reminder.category = "CATEGORY_ID"
+
+    UIApplication.sharedApplication().scheduleLocalNotification(reminder)
+
+    print("Firing at \(now.hour):\(now.minute+1)")
+}
+</code></pre>
+
+<h1>Receiving the response</h1>
+
+<p>Once the user activates the action and writes the reply our <code>AppDelegate</code> is called, receiving a new delegate message introduced in iOS9:</p>
+
+<pre><code class="swift">func application(application: UIApplication, handleActionWithIdentifier identifier: String?, forLocalNotification notification: UILocalNotification, withResponseInfo responseInfo: [NSObject : AnyObject], completionHandler: () -&gt; Void) {
+</code></pre>
+
+<p>The text is stored in the <code>responseInfo</code> under the <code>UIUserNotificationActionResponseTypedTextKey</code> key:</p>
+
+<pre><code class="swift">let reply = responseInfo[UIUserNotificationActionResponseTypedTextKey]
+</code></pre>
+
+<p>And that&rsquo;s it. A welcome addition to the API, let&rsquo;s hope that all the major messaging apps will adopt it soon.<br/>
+I won&rsquo;t show any screenshot of the app since the NDA forbids it, but you can find the full sample <a href="https://github.com/FancyPixel/text-notification-sample">here</a>. Once you run the app and schedule the notification, hop back to the home screen and you&rsquo;ll be able to reply with some text, that will be displayed in the app&rsquo;s view controller.</p>
+
+<p>Until next time.<br/>
+Andrea - <a href="https://twitter.com/theandreamazz">@theandreamazz</a></p>
+]]></content>
+  </entry>
   
   <entry>
     <title type="html"><![CDATA[Gulps: new open source WatchKit app]]></title>
