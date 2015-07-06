@@ -4,7 +4,7 @@
   <title><![CDATA[Category: rails | Fancy Pixel]]></title>
   <link href="http://fancypixel.github.io/blog/categories/rails/atom.xml" rel="self"/>
   <link href="http://fancypixel.github.io/"/>
-  <updated>2015-06-22T12:32:00+02:00</updated>
+  <updated>2015-07-06T17:07:31+02:00</updated>
   <id>http://fancypixel.github.io/</id>
   <author>
     <name><![CDATA[Fancy Pixel]]></name>
@@ -1476,7 +1476,7 @@ end
 
 <p>That&rsquo;s it. Migrate, run the server, and create a user via the console. You should get something like this:</p>
 
-<pre><code>$ curl localhost:3002/v1/login --data "user[email]=user@example.com&amp;user[username]=user&amp;user[password]=password&amp;user[password_confirmation]=password"
+<pre><code>$ curl localhost:3002/v1/login --data "email=user@example.com=user&amp;user[password]=password"
 {
   "token_type": "Bearer",
   "user_id": 1,
