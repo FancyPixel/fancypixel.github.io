@@ -265,8 +265,9 @@ end
 
 <p>That&rsquo;s it. Migrate, run the server, and create a user via the console. You should get something like this:</p>
 
-<pre><code>$ curl localhost:3000/v1/login --ipv4 --data "email=user@example.com=user&amp;user[password]=password"
+<pre><code>$ curl localhost:3000/v1/login --ipv4 --data "username=user@example.com&amp;password=password"
 {
+  "email":"user@example.com",
   "token_type": "Bearer",
   "user_id": 1,
   "access_token": "1:MPSMSopcQQWr-LnVUySs"
