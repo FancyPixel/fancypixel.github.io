@@ -79,7 +79,7 @@ rails generate devise User
 ~~~
 
 ##Token authentication
-Token authentication was removed from Devise a couple of years ago, [this link](http://blog.plataformatec.com.br/2013/08/devise-3-1-now-with-more-secure-defaults/) explains why. We have to implement it for ourselves, but it's quite easy. The token will be composed of two informations: the user's id followed by the token itself, separated by a `:`. We'll be using the user's database id for this sample, for semplicity's sake, but it's obviously not a smart thing to do. 
+Token authentication was removed from Devise a couple of years ago, [this link](http://blog.plataformatec.com.br/2013/08/devise-3-1-now-with-more-secure-defaults/) explains why. We have to implement it for ourselves, but it's quite easy. The token will be composed of two informations: the user's id followed by the token itself, separated by a `:`. We'll be using the user's database id for this sample, for simplicity's sake, but it's obviously not a smart thing to do. 
 First things first, we'll add an `access_token` to the user (and a username too):
 
 ~~~ruby
