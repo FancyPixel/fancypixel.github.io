@@ -1,0 +1,382 @@
+
+<!DOCTYPE HTML>
+<html>
+<head>
+	<meta http-equiv="Content-Type" content="text/html" charset="UTF-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1" />
+	<meta charset="utf-8">
+	<title>Playing with UIDynamics in iOS 9 | Fancy Pixel</title>
+
+	<meta name="author" content="Fancy Pixel">
+	
+	<meta name="description" content="Fancy Pixel 19 Jun 2015 Playing With UIDynamics in iOS 9 UIDynamics was a welcome addition to the iOS 7 SDK. It&rsquo;s basically a physics engine &hellip;">
+
+	<meta name="HandheldFriendly" content="True" />
+	<meta name="MobileOptimized" content="320" />
+	<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+	<link href="/atom.xml" rel="alternate" title="Fancy Pixel" type="application/atom+xml">
+	<link rel="canonical" href="">
+        <link href='http://fonts.googleapis.com/css?family=Kaushan+Script' rel='stylesheet' type='text/css'>
+        <link href="/favicon.png" rel="shortcut icon">
+	<link rel="stylesheet" type="text/css" href="http://fonts.googleapis.com/css?family=Droid+Serif:400,700,400italic|Open+Sans:700,400" />
+	<link href="/stylesheets/screen.css" media="screen, projection" rel="stylesheet" type="text/css">
+	<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/styles/github.min.css" />
+	<!--[if lt IE 9]><script src="//html5shiv.googlecode.com/svn/trunk/html5.js"></script><![endif]-->
+</head>
+
+
+<body class="post-template">
+  <main class="content" role="main"><article class="post">
+  
+	<header class="post-header">
+		<a id="blog-logo" href="/">Fancy Pixel</a>
+	</header>
+	<span class="post-meta">19 Jun 2015</span>
+	<h1 class="post-title">Playing With UIDynamics in iOS 9</h1>
+
+	<section class="post-content">
+		<p>UIDynamics was a welcome addition to the iOS 7 SDK. It&rsquo;s basically a physics engine backing common UIViews, allowing us to define physics traits to the UI elements. The API is fairly straightforward, so you can easily create animations and transitions that look and feel great. I already covered the basics in <a href="http://andreamazz.github.io/blog/2014/05/22/uikit-dynamics/">this article</a> a while ago, this time we&rsquo;ll be looking at what&rsquo;s new in UIDynamics in iOS 9.</p>
+
+<!-- More -->
+
+
+<h2>Collision Bounds</h2>
+
+<p>The first release of UIDynamics shipped with a collision system (provided by <a href="https://developer.apple.com/library/ios/documentation/UIKit/Reference/UICollisionBehavior_Class/">UICollisionBehavior</a>) that only supported rectangular bodies. It made sense, since <code>UIView</code>s are backed by rectangular frames, but it&rsquo;s not uncommon to have a circular view, or even better our own custom Bezier path. With iOS 9 a new property has been added to the <code>UIDynamicItem</code> protocol: <code>UIDynamicItemCollisionBoundsType</code>, which accepts one of these enum values:</p>
+
+<ul>
+<li><code>Rectangle</code></li>
+<li><code>Ellipse</code></li>
+<li><code>Path</code></li>
+</ul>
+
+
+<p>The property is readonly, so if we want to change it we need to provide our own subclass:</p>
+
+<pre><code class="swift">class Ellipse: UIView {
+  override var collisionBoundsType: UIDynamicItemCollisionBoundsType {
+    return .Ellipse
+  }
+}
+</code></pre>
+
+<p>This is a UIView with the default collision bound:</p>
+
+<p><img class="center" src="/images/posts/2015-06-19/slide.gif" width="500" title="'Slide'" ></p>
+
+<p>This is the same UIView with the <code>.Ellipse</code>:</p>
+
+<p><img class="center" src="/images/posts/2015-06-19/roll.gif" width="500" title="'Roll'" ></p>
+
+<p>This covers round views, if we want to get fancy and draw a more complex view with a coherent rigid body we can use the enum property <code>.Path</code> and also override this property:</p>
+
+<pre><code class="swift">var collisionBoundingPath: UIBezierPath { get }
+</code></pre>
+
+<p>The path can be whatever you can think of, as long as it&rsquo;s convex (this means that for any given couple of points inside the polygon, the segment between the two is always entirely contained in the polygon itself) and counter-clockwise wound.<br/>
+The convex requirement could be a significant limit, so <code>UIDynamicItemGroup</code> was introduced to specify shapes as a group of different shapes. This way as long as each shape in the group is convex we are fine even if the resulting polygon composition is concave.</p>
+
+<h2>Field Behavior</h2>
+
+<p>Field behaviors are a new type of behavior that is applied to the whole scene. The most common example that we&rsquo;ve been using implicitly all along is <code>UIGravityBehavior</code>, which applies a down force to each item in the scene. Now we can use a new set of field forces, like Radial (the forces are stronger at the center and weaker around the edges), Noise (forces with different magnitudes are scattered around the field), and so on.</p>
+
+<h2>Dynamic Item Behavior</h2>
+
+<p><code>UIDynamicItemBehavior</code> received a couple of interesting new properties:</p>
+
+<pre><code class="ruby">var charge: CGFloat
+var anchored: Bool
+</code></pre>
+
+<p><code>charge</code> represent the <em>electric charge</em> that can influence how an item moves in an electric or magnetic field (yeah, it&rsquo;s bonkers), while <code>anchored</code> basically turns a shape into a static object that participates in the collisions, but without response (if something crashes into the item, it won&rsquo;t budge), so it&rsquo;s perfect to represent something like a floor or a wall.</p>
+
+<h2>Attachment Behavior</h2>
+
+<p><code>UIAttachmentBehavior</code> was revamped and now has a sleuth of new methods and properties, like <code>frictionTorque</code> and <code>attachmentRange</code>. The attachments can now be more flexible, we can specify relative sliding movements, fixed attachments, rope attachments and what I like the most: pin attachment. Think of two objects nailed together and you get the idea.</p>
+
+<p>This more or less covers what&rsquo;s new in UIDynamics, now it&rsquo;s time to drop the changelog and start building something silly.</p>
+
+<h1>Let&rsquo;s play ball</h1>
+
+<p>I&rsquo;ve been spending a lot of idle time with <a href="https://itunes.apple.com/us/app/ball-king/id946496840?mt=8">Ball King</a> in the last week. It&rsquo;s a brilliant little time waster, the concept is simple but well executed. Also it adopts the same monetization policies of the Apple design winner Crossy Road: it doesn&rsquo;t bother the player in any way. Kudos.</p>
+
+<p><img class="center" src="/images/posts/2015-06-19/ballking.jpeg" width="322" height="572" title="'Ball King'" ></p>
+
+<p>One thing I really like about it is the physic model of the ball and how the hoop&rsquo;s backboard reacts when it gets hit by it. Looks like a fun exercise to test out the new UIDynamics stuff listed above. Let&rsquo;s take a step by step look at how to build our own scruffy version: <a href="https://github.com/FancyPixel/BallSwift">BallSwift</a></p>
+
+<h2>The hoop</h2>
+
+<p>The basket can be created with a single UIView acting as the backboard, a couple of views with rigid bodies as the left and right arms of the hoop, and a frontmost view as the hoop itself (without a physic body). Using the previously defined class <code>Ellipse</code> we can create the visual representation of our game scene:</p>
+
+<pre><code class="swift">/* 
+Build the hoop, setup the world appearance
+*/
+func buildViews() {
+  board = UIView(frame: CGRect(x: hoopPosition.x, y: hoopPosition.y, width: 100, height: 100))
+  board.backgroundColor = .whiteColor()
+  board.layer.borderColor = UIColor(red: 0.98, green: 0.98, blue: 0.98, alpha: 1).CGColor
+  board.layer.borderWidth = 2
+
+  board.addSubview({
+    let v = UIView(frame: CGRect(x: 30, y: 43, width: 40, height: 40))
+    v.backgroundColor = .clearColor()
+    v.layer.borderColor = UIColor(red: 0.4, green: 0.4, blue: 0.4, alpha: 1).CGColor
+    v.layer.borderWidth = 5
+    return v
+    }())
+
+  leftHoop = Ellipse(frame: CGRect(x: hoopPosition.x + 20, y: hoopPosition.y + 80, width: 10, height: 6))
+  leftHoop.backgroundColor = .clearColor()
+  leftHoop.layer.cornerRadius = 3
+
+  rightHoop = Ellipse(frame: CGRect(x: hoopPosition.x + 70, y: hoopPosition.y + 80, width: 10, height: 6))
+  rightHoop.backgroundColor = .clearColor()
+  rightHoop.layer.cornerRadius = 3
+
+  hoop = UIView(frame: CGRect(x: hoopPosition.x + 20, y: hoopPosition.y + 80, width: 60, height: 6))
+  hoop.backgroundColor = UIColor(red: 177.0/255.0, green: 25.0/255.0, blue: 25.0/255.0, alpha: 1)
+  hoop.layer.cornerRadius = 3
+
+  [board, leftHoop, rightHoop, floor, ball, hoop].map({self.view.addSubview($0)})
+}
+</code></pre>
+
+<p>Nothing new here, the hoop is created programmatically and is placed in the constant <code>CGPoint hoopPosition</code>. The order of the views is important though, since we want the hoop to be above the basket ball.</p>
+
+<h2>Nuts and bolts</h2>
+
+<p>The most important part of the hoop are the left and right <em>arms</em>. They need a physical round body (so that the collision with the ball is smooth) and need to be bolted to the board and the front hoop. These two will be basic <code>UIDynamicItem</code>s and won&rsquo;t partecipate directly in the collisions. The newly introduced pin attachment is perfect for this job, it can hold everything together quite nicely as we can see in this rather ugly drawing:</p>
+
+<p><img class="center" src="/images/posts/2015-06-19/hoop.png" width="600" height="400" title="'Hoop'" ></p>
+
+<p>The pin can be attached only to a couple of views at a time, within a given absolute spatial point:</p>
+
+<pre><code class="swift">let bolts = [
+  CGPoint(x: hoopPosition.x + 25, y: hoopPosition.y + 85), // leftHoop -&gt; Board
+  CGPoint(x: hoopPosition.x + 75, y: hoopPosition.y + 85), // rightHoop -&gt; Board
+  CGPoint(x: hoopPosition.x + 25, y: hoopPosition.y + 85), // hoop -&gt; Board (L)
+  CGPoint(x: hoopPosition.x + 75, y: hoopPosition.y + 85)] // hoop -&gt; Board (R)
+
+// Build the board
+zip([leftHoop, rightHoop, hoop, hoop], offsets).map({
+  (item, offset) in
+  animator?.addBehavior(UIAttachmentBehavior.pinAttachmentWithItem(item, attachedToItem: board, attachmentAnchor: bolts))
+})
+</code></pre>
+
+<p>If you&rsquo;re not participating in the race to Swift&rsquo;s functional awesomeness you&rsquo;re probably not familiar with zip and map. It might seem contrived at first, but it&rsquo;s rather simple: each view is coupled with the offset point in which we&rsquo;re going to pin the attachment, resulting in an array of tuples that is then used in the map function that, as the name suggests, creates a mapping with each element of the array with the provided closure. This results in both the left and right arms of the hoop to be bolted to the board and the front hoop as follows:</p>
+
+<ul>
+<li>Left arm bolted to the left of the board</li>
+<li>Right arm bolted to the right of the board</li>
+<li>Hoop bolted to the left of the board</li>
+<li>Hoop bolted to the left of the board</li>
+</ul>
+
+
+<p>The next step requires us to <em>hang</em> the board, letting it rest loosely, so that a collision can cause it to swivel a bit like it does in Ball King:</p>
+
+<pre><code class="swift">// Set the density of the hoop, and fix its angle
+// Hang the hoop
+animator?.addBehavior({
+  let attachment = UIAttachmentBehavior(item: board, attachedToAnchor: CGPoint(x: hoopPosition.x, y: hoopPosition.y))
+  attachment.length = 2
+  attachment.damping = 5
+  return attachment
+  }())
+
+animator?.addBehavior({
+  let behavior = UIDynamicItemBehavior(items: [leftHoop, rightHoop])
+  behavior.density = 10
+  behavior.allowsRotation = false
+  return behavior
+  }())
+
+// Block the board rotation
+animator?.addBehavior({
+  let behavior = UIDynamicItemBehavior(items: [board])
+  behavior.allowsRotation = false
+  return behavior
+  }())
+</code></pre>
+
+<p>The hoop is ready to go. Let&rsquo;s take care of the ball, starting with a custom subclass of <code>UIImageView</code> with a rounded physics body, just like the <code>Ellipse</code> class:</p>
+
+<pre><code class="swift">class Ball: UIImageView {
+  override var collisionBoundsType: UIDynamicItemCollisionBoundsType {
+    return .Ellipse
+  }
+}
+</code></pre>
+
+<p>We can then istantiate the ball as a common UIImageView:</p>
+
+<pre><code class="swift">let ball: Ball = {
+  let ball = Ball(frame: CGRect(x: 0, y: 0, width: 28, height: 28))
+  ball.image = UIImage(named: "ball")
+  return ball
+}()
+</code></pre>
+
+<p>Finally we set its physical properties:</p>
+
+<pre><code class="swift">// Set the elasticity and density of the ball
+animator?.addBehavior({
+  let behavior = UIDynamicItemBehavior(items: [ball])
+  behavior.elasticity = 1
+  behavior.density = 3
+  behavior.action = {
+    if !CGRectIntersectsRect(self.ball.frame, self.view.frame) {
+      self.setupBehaviors()
+      self.ball.center = CGPoint(x: 40, y: self.view.frame.size.height - 100)
+    }
+  }
+  return behavior
+  }())
+</code></pre>
+
+<p>In this bit of code I set the elasticity (how much it should bounce after a collision), density (think of it as the <em>weight</em>) and a handy action closure that resets the world state when the ball exits the play area (the main view).</p>
+
+<h2>Collisions and gravity</h2>
+
+<p>I mentioned the new <code>anchored</code> property of <code>UIDynamicItemBehavior</code>, which disables the dynamic behavior of an object while keeping it in the collision&rsquo;s loop. Sounds like a great way to build a steady floor:</p>
+
+<pre><code class="swift">// Anchor the floor
+animator?.addBehavior({
+  let behavior = UIDynamicItemBehavior(items: [floor])
+  behavior.anchored = true
+  return behavior
+  }())
+</code></pre>
+
+<p>Forget to set this property and you&rsquo;ll be scratching your head a lot. I know I did.<br/>
+Ok, everything is set, it just needs some gravity and a set of collisions:</p>
+
+<pre><code class="swift">animator?.addBehavior(UICollisionBehavior(items: [leftHoop, rightHoop, floor, ball]))
+animator?.addBehavior(UIGravityBehavior(items: [ball]))
+</code></pre>
+
+<p>The gravity is a field behavior that applies a down force of 1 point per second as default. The collision behavior takes as parameter only the views that should collide with each other. The world is set up, now we can apply an instantaneous force to the ball and keep our fingers crossed:</p>
+
+<pre><code class="swift">let push = UIPushBehavior(items: [ball], mode: .Instantaneous)
+push.angle = -1.35
+push.magnitude = 1.56
+animator?.addBehavior(push)
+</code></pre>
+
+<p><img class="center" src="/images/posts/2015-06-19/ball.gif" width="500" height="820" title="'BallSwift'" ></p>
+
+<p>And there you go, it&rsquo;s really rough around the edges, but that was a lot of fun to build (yes, the clouds and the bushes are the same drawing, like in <a href="https://www.youtube.com/watch?v=ai7d1K4Yf6A">Super Mario</a>).<br/>
+As always you can find the source on our <a href="https://github.com/FancyPixel/BallSwift">GitHub page</a>.</p>
+
+<p>Until next time,</p>
+
+<p>Andrea - <em><a href="https://twitter.com/theandreamazz">@theandreamazz</a></em></p>
+
+	</section>
+
+  <footer class="post-footer">
+  <section class="author">
+    <h4>Fancy Pixel</h4>
+    <p></p>
+  </section>
+  <section class="share">
+    <h4>Share this post</h4>
+    <a class="icon-twitter" href="http://twitter.com/share?text=Playing with UIDynamics in iOS 9&amp;url=http://fancypixel.github.io/blog/2015/06/19/playing-with-uidynamics-in-ios-9/" onclick="window.open(this.href, 'twitter-share', 'width=550,height=235');return false;">
+      <span class="hidden">Twitter</span>
+    </a>
+    <a class="icon-facebook" href="https://www.facebook.com/sharer/sharer.php?u=http://fancypixel.github.io/blog/2015/06/19/playing-with-uidynamics-in-ios-9/" onclick="window.open(this.href, 'facebook-share','width=580,height=296');return false;">
+      <span class="hidden">Facebook</span>
+    </a>
+    <a class="icon-google-plus" href="https://plus.google.com/share?url=http://fancypixel.github.io/blog/2015/06/19/playing-with-uidynamics-in-ios-9/" onclick="window.open(this.href, 'google-plus-share', 'width=490,height=530');return false;">
+      <span class="hidden">Google+</span>
+    </a>
+  </section>
+</footer>
+  <hr>
+  
+    <div class="share">
+</div>
+
+  
+  
+  <section id="comment">
+    <div id="disqus_thread" aria-live="polite"><noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+</div>
+  </section>
+  
+</article></main>
+  <footer class="site-footer"><a class="subscribe icon-feed" href="http://fancypixel.github.io/atom.xml"><span class="tooltip">Subscribe!</span></a>
+
+
+<div class="inner">
+
+
+Follow me on
+
+
+
+<a class="social twitter" href="http://twitter.com/FancyPixel" title="Twitter">Twitter</a>
+
+
+
+<a class="social github" href="http://github.com/fancypixel" title="GitHub">GitHub</a>
+
+
+
+<a class="social google_plus" href="http://plus.google.com/+FancypixelIt" title="Google+">Google+</a>
+
+
+<section class="copyright">All content copyright <a href="/">Fancy Pixel</a> © 2015 • All rights reserved.</section>
+
+<section class="poweredby">Casper theme by <a class="icon-ghost" href="http://tryghost.org">Ghost</a> &amp; Published with <a href="http://octopress.org">Octopress</a></section>
+
+<script type="text/javascript" id="cookiebanner"
+  src="http://fancypixel.it/home/js/cookiebanner.js"
+  data-height="60px" data-position="bottom"
+  data-message="This site uses cookies. By continuing to browse the site, you are agreeing to our use of cookies."
+  data-moreinfo="http://fancypixel.it/home/cookies-en.html">
+</script>
+
+</div>
+</footer>
+  <script src="//ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/8.4/highlight.min.js"></script>
+<script>hljs.initHighlightingOnLoad()</script>
+
+
+
+<script type="text/javascript">
+      var disqus_shortname = 'fancypixel';
+      
+        
+        // var disqus_developer = 1;
+        var disqus_identifier = 'http://fancypixel.github.io/blog/2015/06/19/playing-with-uidynamics-in-ios-9/';
+        var disqus_url = 'http://fancypixel.github.io/blog/2015/06/19/playing-with-uidynamics-in-ios-9/';
+        var disqus_script = 'embed.js';
+      
+    (function () {
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/' + disqus_script;
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    }());
+</script>
+
+
+
+	<script type="text/javascript">
+		var _gaq = _gaq || [];
+		_gaq.push(['_setAccount', 'UA-49005091-8']);
+		_gaq.push(['_trackPageview']);
+
+		(function() {
+			var ga = document.createElement('script'); ga.type = 'text/javascript'; ga.async = true;
+			ga.src = ('https:' == document.location.protocol ? 'https://ssl' : 'http://www') + '.google-analytics.com/ga.js';
+			var s = document.getElementsByTagName('script')[0]; s.parentNode.insertBefore(ga, s);
+		})();
+	</script>
+
+
+</body>
+</html>

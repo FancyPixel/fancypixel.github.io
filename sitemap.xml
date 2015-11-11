@@ -1,75 +1,72 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
+    <loc>http://fancypixel.github.io/blog/2015/06/19/playing-with-uidynamics-in-ios-9/</loc>
+    <lastmod>2015-06-19T12:35:31+02:00</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>http://fancypixel.github.io/blog/2015/06/11/ios9-notifications-and-text-input/</loc>
+    <lastmod>2015-06-11T11:03:06+02:00</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>http://fancypixel.github.io/blog/2015/06/01/apis-with-rails-render-json-the-simple-way/</loc>
+    <lastmod>2015-06-01T14:50:41+02:00</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>http://fancypixel.github.io/blog/2015/04/13/gulps-new-open-source-watchkit-app/</loc>
     <lastmod>2015-04-13T21:26:20+02:00</lastmod>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>http://fancypixel.github.io/blog/2015/03/29/share-data-between-watchkit-and-your-app-with-realm/</loc>
     <lastmod>2015-03-29T15:00:32+02:00</lastmod>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>http://fancypixel.github.io/blog/2015/01/30/react-plus-flux-backed-by-rails-api-part-3/</loc>
     <lastmod>2015-01-30T15:40:43+01:00</lastmod>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>http://fancypixel.github.io/blog/2015/01/29/react-plus-flux-backed-by-rails-api-part-2/</loc>
     <lastmod>2015-01-29T10:31:00+01:00</lastmod>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>http://fancypixel.github.io/blog/2015/01/28/react-plus-flux-backed-by-rails-api/</loc>
     <lastmod>2015-01-28T16:04:00+01:00</lastmod>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>http://fancypixel.github.io/blog/2014/07/01/fun-with-ibeacon/</loc>
     <lastmod>2014-07-01T20:47:00+02:00</lastmod>
-  </url>
-  <url>
-    <loc>http://fancypixel.github.io/archives/</loc>
+    <priority>0.8</priority>
   </url>
   <url>
     <loc>http://fancypixel.github.io/blog/archives/</loc>
+    <lastmod>2015-09-21T09:34:10+02:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
+  </url>
+  <url>
+    <loc>http://fancypixel.github.io/archives/</loc>
+    <lastmod>2015-09-21T09:34:10+02:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
   </url>
   <url>
     <loc>http://fancypixel.github.io/blog/</loc>
+    <lastmod>2015-09-21T09:34:10+02:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>0.7</priority>
   </url>
   <url>
     <loc>http://fancypixel.github.io/</loc>
-  </url>
-  <url>
-    <loc>http://fancypixel.github.io/blog/categories/ios/</loc>
-  </url>
-  <url>
-    <loc>http://fancypixel.github.io/blog/categories/beacon/</loc>
-  </url>
-  <url>
-    <loc>http://fancypixel.github.io/blog/categories/rails/</loc>
-  </url>
-  <url>
-    <loc>http://fancypixel.github.io/blog/categories/api/</loc>
-  </url>
-  <url>
-    <loc>http://fancypixel.github.io/blog/categories/react/</loc>
-  </url>
-  <url>
-    <loc>http://fancypixel.github.io/blog/categories/flux/</loc>
-  </url>
-  <url>
-    <loc>http://fancypixel.github.io/blog/categories/javascript/</loc>
-  </url>
-  <url>
-    <loc>http://fancypixel.github.io/blog/categories/swift/</loc>
-  </url>
-  <url>
-    <loc>http://fancypixel.github.io/blog/categories/apple/</loc>
-  </url>
-  <url>
-    <loc>http://fancypixel.github.io/blog/categories/watch/</loc>
-  </url>
-  <url>
-    <loc>http://fancypixel.github.io/blog/categories/watchkit/</loc>
-  </url>
-  <url>
-    <loc>http://fancypixel.github.io/blog/categories/realm/</loc>
+    <lastmod>2015-09-21T09:34:10+02:00</lastmod>
+    <changefreq>weekly</changefreq>
+    <priority>1.0</priority>
   </url>
 </urlset>

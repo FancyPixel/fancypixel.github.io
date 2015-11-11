@@ -276,7 +276,7 @@ module.exports = {
 <p>This cover all the user-initiated actions in the context of the session. The login action creator as you can see creates a new ViewAction, attaching a payload with the user&rsquo;s email and password, and then calls the <code>WebAPIUtils.login</code> method. If other components registered their interest in receiving the <code>LOGIN_REQUEST</code> action, the dispatcher would deliver this action right now.<br/>
 The login method of our WebAPIUtils class is this:</p>
 
-<pre><code class="js">// ./scripts/utils/WeAPIUtils.js
+<pre><code class="js">// ./scripts/utils/WebAPIUtils.js
 var ServerActionCreators = require('../actions/ServerActionCreators.react.jsx');
 var request = require('superagent');
 
@@ -679,6 +679,13 @@ Follow me on
 <section class="copyright">All content copyright <a href="/">Fancy Pixel</a> © 2015 • All rights reserved.</section>
 
 <section class="poweredby">Casper theme by <a class="icon-ghost" href="http://tryghost.org">Ghost</a> &amp; Published with <a href="http://octopress.org">Octopress</a></section>
+
+<script type="text/javascript" id="cookiebanner"
+  src="http://fancypixel.it/home/js/cookiebanner.js"
+  data-height="60px" data-position="bottom"
+  data-message="This site uses cookies. By continuing to browse the site, you are agreeing to our use of cookies."
+  data-moreinfo="http://fancypixel.it/home/cookies-en.html">
+</script>
 
 </div>
 </footer>

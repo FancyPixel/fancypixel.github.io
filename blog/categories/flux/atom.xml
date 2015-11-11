@@ -4,7 +4,7 @@
   <title><![CDATA[Category: flux | Fancy Pixel]]></title>
   <link href="http://fancypixel.github.io/blog/categories/flux/atom.xml" rel="self"/>
   <link href="http://fancypixel.github.io/"/>
-  <updated>2015-04-16T21:42:28+02:00</updated>
+  <updated>2015-09-21T09:34:10+02:00</updated>
   <id>http://fancypixel.github.io/</id>
   <author>
     <name><![CDATA[Fancy Pixel]]></name>
@@ -609,7 +609,7 @@ module.exports = {
 <p>This cover all the user-initiated actions in the context of the session. The login action creator as you can see creates a new ViewAction, attaching a payload with the user&rsquo;s email and password, and then calls the <code>WebAPIUtils.login</code> method. If other components registered their interest in receiving the <code>LOGIN_REQUEST</code> action, the dispatcher would deliver this action right now.<br/>
 The login method of our WebAPIUtils class is this:</p>
 
-<pre><code class="js">// ./scripts/utils/WeAPIUtils.js
+<pre><code class="js">// ./scripts/utils/WebAPIUtils.js
 var ServerActionCreators = require('../actions/ServerActionCreators.react.jsx');
 var request = require('superagent');
 
@@ -1191,7 +1191,7 @@ end
 
 <p>That&rsquo;s it. Migrate, run the server, and create a user via the console. You should get something like this:</p>
 
-<pre><code>$ curl localhost:3002/v1/login --data "username=user@example.com&amp;password=password"
+<pre><code>$ curl localhost:3000/v1/login --ipv4 --data "usernme=user@example.com&amp;password=password"
 {
   "token_type": "Bearer",
   "user_id": 1,
