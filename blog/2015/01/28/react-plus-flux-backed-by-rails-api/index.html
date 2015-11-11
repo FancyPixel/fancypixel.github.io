@@ -116,7 +116,7 @@ The gem Devise used to implement a <code>token_authenticatable</code> strategy, 
 
 <h2>Token authentication</h2>
 
-<p>Token authentication was removed from Devise a couple of years ago, <a href="http://blog.plataformatec.com.br/2013/08/devise-3-1-now-with-more-secure-defaults/">this link</a> explains why. We have to implement it for ourselves, but it&rsquo;s quite easy. The token will be composed of two informations: the user&rsquo;s id followed by the token itself, separated by a <code>:</code>. We&rsquo;ll be using the user&rsquo;s database id for this sample, for semplicity&rsquo;s sake, but it&rsquo;s obviously not a smart thing to do.
+<p>Token authentication was removed from Devise a couple of years ago, <a href="http://blog.plataformatec.com.br/2013/08/devise-3-1-now-with-more-secure-defaults/">this link</a> explains why. We have to implement it for ourselves, but it&rsquo;s quite easy. The token will be composed of two informations: the user&rsquo;s id followed by the token itself, separated by a <code>:</code>. We&rsquo;ll be using the user&rsquo;s database id for this sample, for simplicity&rsquo;s sake, but it&rsquo;s obviously not a smart thing to do.
 First things first, we&rsquo;ll add an <code>access_token</code> to the user (and a username too):</p>
 
 <pre><code class="ruby">class AddAccessTokenToUser &lt; ActiveRecord::Migration
