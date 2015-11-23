@@ -294,8 +294,8 @@ Finding a way to reset the percentage wasn't that straightforward, since I'm onl
 As it turns out though, the data source protocol holds a pretty handy function: 
 
 ~~~swift
-/// This method will be called when you are woken due to a requested update. If your complication data has changed you can
-/// then call -reloadTimelineForComplication: or -extendTimelineForComplication: to trigger an update.
+/** This method will be called when you are woken due to a requested update. If your complication data has changed you can
+ then call -reloadTimelineForComplication: or -extendTimelineForComplication: to trigger an update. */
 optional public func requestedUpdateDidBegin()
 ~~~
 
@@ -333,12 +333,17 @@ func quantity() -> Double {
 }
 ~~~
 
-And there it is. You can head to the [GitHub repo](https://github.com/FancyPixel/gulps) of Gulps and compile it, or even better download it from the store (once the build passes review), and you'll notice that the WatchOS app is a lot snappier, and the communication times between the two devices is pretty fast. I'm pretty happy with it, but it required a good dose of patience. It might not seem now, but the `WatchConnectivity` framework has some pitfalls, it works great when you are learning it with a smaple app, but once you factor in an app just a little bit more complex, you're in for a treat. It doesn't help that getting the app compiled on a real device requires quite a lot time. You'll be seeing the loading spinner A LOT, soldier on.  
+{% img center /images/posts/2015-11-24/thereitis.gif 400 'Jeff' %}
+
+
+You can head to the [GitHub repo](https://github.com/FancyPixel/gulps) of Gulps and compile it, or even better download it from the store (once the build passes review), and you'll notice that the WatchOS app is a lot snappier, and the communication time between the two devices is pretty fast.  
+
+I'm pretty happy with it, but it required a good dose of patience. `WatchConnectivity` works great when you are learning it with a simple demo app, but once you factor in an app just a little bit more complex, you're in for a treat. In the end it all boils down to figuring out what _needs_ to be transfered and _when_. It doesn't help that getting the app compiled on a real device requires quite a lot time. You'll be seeing the [loading spinner](https://twitter.com/theandreamazz/status/658968255349063682) A LOT, soldier on.  
 With that being said, in the end the app runs way smoother, so it's all worth it.
 
 ##References
 
-You can read more on the WatchConnectivity framework in [this article](http://natashatherobot.com/watchconnectivity-say-hello-to-wcsession/) by Natasha Murashev (who was kind enough to contribute in the past to this project), [this one](http://www.kristinathai.com/watchos-2-how-to-communicate-between-devices-using-watch-connectivity/) by Kristina Thai or [Raywenderlich's one](http://www.raywenderlich.com/117329/watchos-2-tutorial-part-4-watch-connectivity) written by Mic Pringle. 
+You can read more on the WatchConnectivity framework in [this article](http://natashatherobot.com/watchconnectivity-say-hello-to-wcsession/) by Natasha Murashev (who was kind enough to contribute in the past to this project), [this one](http://www.kristinathai.com/watchos-2-how-to-communicate-between-devices-using-watch-connectivity/) by Kristina Thai or [Raywenderlich's one](http://www.raywenderlich.com/117329/watchos-2-tutorial-part-4-watch-connectivity) written by Mic Pringle.  
 Also Raywenderlich's [“watchOS 2 by Tutorials”](http://www.raywenderlich.com/store/watchos-2-by-tutorials) was of great help, consider picking it up if you want to delve deeper into WatchOS development.  
 
 Until next time,  
