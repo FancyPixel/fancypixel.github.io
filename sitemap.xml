@@ -1,6 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.sitemaps.org/schemas/sitemap/0.9 http://www.sitemaps.org/schemas/sitemap/0.9/sitemap.xsd" xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
+    <loc>http://fancypixel.github.io/blog/2015/11/24/moving-to-watchos-2/</loc>
+    <lastmod>2015-11-24T14:35:45+01:00</lastmod>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>http://fancypixel.github.io/blog/2015/06/19/playing-with-uidynamics-in-ios-9/</loc>
     <lastmod>2015-06-19T12:35:31+02:00</lastmod>
     <priority>0.8</priority>
@@ -46,26 +51,26 @@
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>http://fancypixel.github.io/blog/archives/</loc>
-    <lastmod>2015-11-11T11:37:28+01:00</lastmod>
+    <loc>http://fancypixel.github.io/archives/</loc>
+    <lastmod>2015-11-23T14:57:16+01:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
-    <loc>http://fancypixel.github.io/archives/</loc>
-    <lastmod>2015-11-11T11:37:28+01:00</lastmod>
+    <loc>http://fancypixel.github.io/blog/archives/</loc>
+    <lastmod>2015-11-23T14:57:16+01:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>http://fancypixel.github.io/blog/</loc>
-    <lastmod>2015-11-11T11:37:28+01:00</lastmod>
+    <lastmod>2015-11-23T14:57:16+01:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
   <url>
     <loc>http://fancypixel.github.io/</loc>
-    <lastmod>2015-11-11T11:37:28+01:00</lastmod>
+    <lastmod>2015-11-23T14:57:16+01:00</lastmod>
     <changefreq>weekly</changefreq>
     <priority>1.0</priority>
   </url>
