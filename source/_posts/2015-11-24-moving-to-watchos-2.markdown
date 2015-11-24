@@ -14,7 +14,7 @@ In this post we'll cover how to share data between the main app and the watch ex
 
 ##Gulps
 
-The previous version of [Gulps](https://itunes.apple.com/us/app/gulps/id979057304?ls=1&mt=8) relied on Apple's [App grouping](https://developer.apple.com/library/prerelease/ios/documentation/General/Conceptual/ExtensibilityPG/ExtensionScenarios.html#//apple_ref/doc/uid/TP40014214-CH21-SW1) to share data between the app and the watch extension. The data was stored on [Realm](http://ream.io), and thanks to its notification system, the watch app was always kept up to date when a change occurred. This was possible because the watch extension used to live on the phone alongside the main app. It was a brilliant system, and so easy to implement... my heart sank when Apple announced that the watch extension was going to live on the watch. I knew that a storm of refactoring was coming. Before opening that can of worms, let's reminisce about the good old times.  
+The previous version of [Gulps](https://itunes.apple.com/us/app/gulps/id979057304?ls=1&mt=8) relied on Apple's [App grouping](https://developer.apple.com/library/prerelease/ios/documentation/General/Conceptual/ExtensibilityPG/ExtensionScenarios.html#//apple_ref/doc/uid/TP40014214-CH21-SW1) to share data between the app and the watch extension. The data was stored on [Realm](http://ream.io), and thanks to its notification system, the watch app was always kept up to date when a change occurred. This was possible because the watch extension used to live on the phone alongside the main app. It was a brilliant system, and so easy to implement... my heart sank when Apple announced that they were moving the watch extension on the watch itself. I knew that a storm of refactoring was coming. Before opening that can of worms, let's reminisce about the good old times.  
 This is the setup for a WatchOS 1 app:
 
 ~~~swift
@@ -24,7 +24,7 @@ realmToken = RLMRealm.defaultRealm().addNotificationBlock { note, realm in
 ~~~
 
 Once a change occurred on the phone or on the Watch app, a broadcast notification was fired, triggering a closure that updated the UI.   
-If you want to know more on Realm and app grouping, checkout [this article](http://fancypixel.github.io/blog/2015/03/29/share-data-between-watchkit-and-your-app-with-realm/) by yours truly. 
+If you want to know more about Realm and app grouping, checkout [this article](http://fancypixel.github.io/blog/2015/03/29/share-data-between-watchkit-and-your-app-with-realm/) by yours truly. It still is the best way to share data between the main app and an extension (e.g: a today widget). 
 
 {% img center /images/posts/2015-11-24/gulps.png 500 'Gulps' %}
 
@@ -34,7 +34,7 @@ I do realize it took me a while to jump on the WatchOS 2 train, but since Gulps 
 
 {% img center /images/posts/2015-11-24/architecture.png 500 'WatchOS 2' %}
 
-This has a major advantage: less spinning spinner of spinning boredom, the app is a lot snappier, and can rely a lot less from the phone (e.g. by making independent network requests).  
+This has a major advantages: less spinning spinner of spinning boredom, the app is a lot snappier, and can rely a lot less on the phone (e.g. by making independent network requests).  
 That's cool, but it comes at a cost... sharing data as we did before is impossible. 
 Apple provided a new framework though: [WatchConnectivity](https://developer.apple.com/library/watchos/documentation/WatchConnectivity/Reference/WatchConnectivity_framework/index.html).  
 
@@ -52,7 +52,7 @@ Complications are small modules used to personalize the watch faces and show sma
 - _Interactive messages_, used when both the app and the phone are active and in range. It's a more interactive way to share data, ideal when the user needs to see the feedback on both screens. 
 
 For Gulps I picked _Application Context_ sharing, since the current state of the daily progress is what really matters, and the user hardly uses both apps at the same time (although since the transfer is pretty fast, when he does, the feedback is still snappy).  
-All the code is available on [GitHub](https://github.com/FancyPixel/gulps), for sharing the data we'll reference the `WatchConnectivityHelper` and `WatchEntryHelper`: [here](https://github.com/FancyPixel/gulps/blob/master/Gulps/Support/WatchConnectivityHelper.swift) and [here](https://github.com/FancyPixel/gulps/blob/master/Gulps%20WatchKit%20Extension/WatchEntryHelper.swift). In hindsight those class name are horrible. 
+All the code is available on [GitHub](https://github.com/FancyPixel/gulps), for sharing the data we'll reference the `WatchConnectivityHelper` and `WatchEntryHelper`: [here](https://github.com/FancyPixel/gulps/blob/master/Gulps/Support/WatchConnectivityHelper.swift) and [here](https://github.com/FancyPixel/gulps/blob/master/Gulps%20WatchKit%20Extension/WatchEntryHelper.swift).  
 
 ###Setting up the session
 
@@ -103,7 +103,7 @@ All set up, time to think about how to communicate.
 
 ###From phone to watch
 
-All the utility functions to send and read data from the watch are held in a handy struct: `WatchConnectivityHelper`, and an instance of this struct is held by the `AppDelegate`. We need a way to be notified when a change occurs to our database, so that we can trigger an update to the application context. As I mentioned before, Realm makes this pretty easy, thanks to [Realm Notifications](https://realm.io/docs/swift/latest/#notifications). Soon after the session is set a new Realm notification is created (the token needs to be strongly held): 
+All the utility functions to send and read data from the watch are held in a handy struct: `WatchConnectivityHelper`, and an instance of this struct is held by the `AppDelegate`. We need a way to be notified when a change occurs on our database, so that we can trigger an update to the application context. As I mentioned before, Realm makes this pretty easy, thanks to [Realm Notifications](https://realm.io/docs/swift/latest/#notifications). Soon after the session is set a new Realm notification is created (the token needs to be strongly held): 
 
 ~~~swift
 realmNotification = watchConnectivityHelper.setupWatchUpdates()
@@ -183,7 +183,7 @@ func session(session: WCSession, didReceiveApplicationContext applicationContext
 }
 ~~~
 
-Since we are implementing all this in the Extension delegate, to update the interface (in the off chance that the user is staring at both his phone and watch with both apps running) we toss a notification through the `NSNotificationCenter`. Another approach would be to force a reload of the interface controller, but that would prevent animations.  
+Since we are implementing all this in the Extension delegate, to update the interface (in the off chance that the user is staring at both his phone and watch with both apps running) we toss a notification through the `NSNotificationCenter`, letting the interface controller handle that with an animation. Another approach would be to force a reload of the interface controller, but that would prevent such animation.  
 
 Luckily the communication between watch and phone works pretty much the same way.  
 
@@ -221,25 +221,8 @@ func getPlaceholderTemplateForComplication(complication: CLKComplication, withHa
         smallFlat.imageProvider = CLKImageProvider(onePieceImage: UIImage(named: "complication")!)
         smallFlat.tintColor = .mainColor()
         handler(smallFlat)
-    } else if complication.family == .UtilitarianLarge {
-        let largeFlat = CLKComplicationTemplateUtilitarianLargeFlat()
-        largeFlat.textProvider = CLKSimpleTextProvider(text: "Goal: 42%", shortText:"42%")
-        largeFlat.imageProvider = CLKImageProvider(onePieceImage: UIImage(named: "complication")!)
-        largeFlat.tintColor = .mainColor()
-        handler(largeFlat)
-    } else if complication.family == .CircularSmall {
-        let circularSmall = CLKComplicationTemplateCircularSmallRingImage()
-        circularSmall.imageProvider = CLKImageProvider(onePieceImage: UIImage(named: "complication")!)
-        circularSmall.ringStyle = .Closed
-        circularSmall.tintColor = .mainColor()
-        handler(circularSmall)
-    } else if complication.family == .ModularSmall {
-        let modularSmall = CLKComplicationTemplateModularSmallRingImage()
-        modularSmall.imageProvider = CLKImageProvider(onePieceImage: UIImage(named: "complication")!)
-        modularSmall.ringStyle = .Closed
-        modularSmall.tintColor = .mainColor()
-        handler(modularSmall)
-    }
+    } 
+    // ...
 }
 ~~~
 
@@ -251,10 +234,7 @@ The final complication setup doesn't differ too much from the template, beside t
 
 ~~~swift
 func getCurrentTimelineEntryForComplication(complication: CLKComplication, withHandler handler: (CLKComplicationTimelineEntry?) -> Void) {
-    var percentage = 0
-    if let storedPercentage = WatchEntryHelper.sharedHelper.percentage() {
-        percentage = storedPercentage
-    }
+    let percentage = WatchEntryHelper.sharedHelper.percentage() ?? 0
 
     if complication.family == .UtilitarianSmall {
         let smallFlat = CLKComplicationTemplateUtilitarianSmallFlat()
@@ -262,29 +242,12 @@ func getCurrentTimelineEntryForComplication(complication: CLKComplication, withH
         smallFlat.imageProvider = CLKImageProvider(onePieceImage: UIImage(named: "complication")!)
         smallFlat.tintColor = .mainColor()
         handler(CLKComplicationTimelineEntry(date: NSDate(), complicationTemplate: smallFlat))
-    } else if complication.family == .UtilitarianLarge {
-        let largeFlat = CLKComplicationTemplateUtilitarianLargeFlat()
-        largeFlat.textProvider = CLKSimpleTextProvider(text: "Goal: \(percentage)%", shortText: "\(percentage)%")
-        largeFlat.imageProvider = CLKImageProvider(onePieceImage: UIImage(named: "complication")!)
-        largeFlat.tintColor = .mainColor()
-        handler(CLKComplicationTimelineEntry(date: NSDate(), complicationTemplate: largeFlat))
-    } else if complication.family == .CircularSmall {
-        let circularSmall = CLKComplicationTemplateCircularSmallRingImage()
-        circularSmall.imageProvider = CLKImageProvider(onePieceImage: UIImage(named: "complication")!)
-        circularSmall.ringStyle = .Closed
-        circularSmall.fillFraction = Float(percentage) / 100.0
-        circularSmall.tintColor = .mainColor()
-        handler(CLKComplicationTimelineEntry(date: NSDate(), complicationTemplate: circularSmall))
-    } else if complication.family == .ModularSmall {
-        let modularSmall = CLKComplicationTemplateModularSmallRingImage()
-        modularSmall.imageProvider = CLKImageProvider(onePieceImage: UIImage(named: "complication")!)
-        modularSmall.ringStyle = .Closed
-        modularSmall.fillFraction = Float(percentage) / 100.0
-        modularSmall.tintColor = .mainColor()
-        handler(CLKComplicationTimelineEntry(date: NSDate(), complicationTemplate: modularSmall))
-    }
+    } 
+    // ...
 }
 ~~~
+
+Check out the full source [here](https://github.com/FancyPixel/gulps/blob/master/Gulps%20WatchKit%20Extension/ComplicationController.swift). 
 
 ###Reloading complications
 
@@ -305,13 +268,11 @@ A-ha! WatchOS asks your complications how they are feeling every once in a while
 func requestedUpdateDidBegin() {
     let server = CLKComplicationServer.sharedInstance()
 
-    for comp in (server.activeComplications) {
-        server.reloadTimelineForComplication(comp)
-    }
+    server.activeComplications.forEach { server.reloadTimelineForComplication($0) }
 }
 ~~~
 
-Since the model holds the date of the last update, it's easy to che when a percentage is stale:
+Since the model holds the date of the last update, it's easy to check when a percentage is stale:
 
 ~~~swift
 /**
@@ -343,7 +304,7 @@ With that being said, in the end the app runs way smoother, so it's all worth it
 
 ##References
 
-You can read more on the WatchConnectivity framework in [this article](http://natashatherobot.com/watchconnectivity-say-hello-to-wcsession/) by Natasha Murashev (who was kind enough to contribute in the past to this project), [this one](http://www.kristinathai.com/watchos-2-how-to-communicate-between-devices-using-watch-connectivity/) by Kristina Thai or [Raywenderlich's one](http://www.raywenderlich.com/117329/watchos-2-tutorial-part-4-watch-connectivity) written by Mic Pringle.  
+You can read more on the WatchConnectivity framework in [this article](http://natashatherobot.com/watchconnectivity-say-hello-to-wcsession/) by Natasha Murashev (who was also kind enough to contribute to this project), [this one](http://www.kristinathai.com/watchos-2-how-to-communicate-between-devices-using-watch-connectivity/) by Kristina Thai or [Raywenderlich's one](http://www.raywenderlich.com/117329/watchos-2-tutorial-part-4-watch-connectivity) written by Mic Pringle.  
 Also Raywenderlich's [“watchOS 2 by Tutorials”](http://www.raywenderlich.com/store/watchos-2-by-tutorials) was of great help, consider picking it up if you want to delve deeper into WatchOS development.  
 
 Until next time,  
