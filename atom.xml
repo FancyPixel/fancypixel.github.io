@@ -4,7 +4,7 @@
   <title><![CDATA[Fancy Pixel]]></title>
   <link href="http://fancypixel.github.io/atom.xml" rel="self"/>
   <link href="http://fancypixel.github.io/"/>
-  <updated>2015-11-23T14:57:16+01:00</updated>
+  <updated>2015-11-25T10:17:12+01:00</updated>
   <id>http://fancypixel.github.io/</id>
   <author>
     <name><![CDATA[Fancy Pixel]]></name>
@@ -19,14 +19,15 @@
     <updated>2015-11-24T14:35:45+01:00</updated>
     <id>http://fancypixel.github.io/blog/2015/11/24/moving-to-watchos-2</id>
     <content type="html"><![CDATA[<p>A while ago we released Gulps on the <a href="https://itunes.apple.com/us/app/gulps/id979057304?ls=1&amp;mt=8">AppStore</a>. Gulps is a simple water tracking app that also reminds you when to drink throughout the day.<br/>
-This was an app of &ldquo;firsts&rdquo; for me. First Swift app, first full app open sourced, first WatchKit app, first HealthKit app, first 3D touch implementation. It&rsquo;s my go-to app when I need to experiment with new stuff. The streak continues with WatchOS 2. In this post we&rsquo;ll cover how to share data between the main app and the watch extension with the WatchConnectivity framework, and how to create a simple set of watch face complications. As an added bonus we&rsquo;ll be doing that with a full open source app, that&rsquo;s live on the AppStore. Off we go.</p>
+This was an app of &ldquo;firsts&rdquo; for me: first Swift app, first full app open sourced, first WatchKit app, first HealthKit app, first 3D touch implementation. It&rsquo;s my go-to app when I need to experiment with new stuff. The streak continues with WatchOS 2.<br/>
+In this post we&rsquo;ll cover how to share data between the main app and the watch extension with the WatchConnectivity framework, and how to create a simple set of watch face complications. As an added bonus we&rsquo;ll be doing that with a full open source app, that&rsquo;s live on the AppStore. Off we go.</p>
 
 <!-- More -->
 
 
 <h2>Gulps</h2>
 
-<p>The previous version of <a href="https://itunes.apple.com/us/app/gulps/id979057304?ls=1&amp;mt=8">Gulps</a> relied on Apple&rsquo;s <a href="https://developer.apple.com/library/prerelease/ios/documentation/General/Conceptual/ExtensibilityPG/ExtensionScenarios.html#//apple_ref/doc/uid/TP40014214-CH21-SW1">App grouping</a> to share data between the app and the watch extension. The data was stored on <a href="http://ream.io">Realm</a>, and thanks to its notification system, the watch app was always kept up to date when a change occurred. This was possible because the watch extension used to live on the phone alongside the main app. It was a brilliant system, and so easy to implement&hellip; my heart sank when Apple announced that the watch extension was going to live on the watch. I knew that a storm of refactoring was coming. Before opening that can of worms, let&rsquo;s reminisce about the good old times.
+<p>The previous version of <a href="https://itunes.apple.com/us/app/gulps/id979057304?ls=1&amp;mt=8">Gulps</a> relied on Apple&rsquo;s <a href="https://developer.apple.com/library/prerelease/ios/documentation/General/Conceptual/ExtensibilityPG/ExtensionScenarios.html#//apple_ref/doc/uid/TP40014214-CH21-SW1">App grouping</a> to share data between the app and the watch extension. The data was stored on <a href="http://ream.io">Realm</a>, and thanks to its notification system, the watch app was always kept up to date when a change occurred. This was possible because the watch extension used to live on the phone alongside the main app. It was a brilliant system, and so easy to implement&hellip; my heart sank when Apple announced that they were moving the watch extension on the watch itself. I knew that a storm of refactoring was coming. Before opening that can of worms, let&rsquo;s reminisce about the good old times.<br/>
 This is the setup for a WatchOS 1 app:</p>
 
 <pre><code class="swift">realmToken = RLMRealm.defaultRealm().addNotificationBlock { note, realm in
@@ -34,23 +35,24 @@ This is the setup for a WatchOS 1 app:</p>
 }
 </code></pre>
 
-<p>Once a change occurred on the phone or on the Watch app, a broadcast notification was fired, triggering a closure that updated the UI.<br/>
-If you want to know more on Realm and app grouping, checkout <a href="http://fancypixel.github.io/blog/2015/03/29/share-data-between-watchkit-and-your-app-with-realm/">this article</a> by yours truly.</p>
+<p>Once a change occurred on the phone or on the Watch app, a broadcast notification was fired, triggering a closure that updated the UI. <br/>
+If you want to know more about Realm and app grouping, checkout <a href="http://fancypixel.github.io/blog/2015/03/29/share-data-between-watchkit-and-your-app-with-realm/">this article</a> by yours truly. It still is the best way to share data between the main app and an extension (e.g: a today widget).</p>
 
 <p><img class="center" src="http://fancypixel.github.io/images/posts/2015-11-24/gulps.png" width="500" title="'Gulps'" ></p>
 
 <h2>WatchOS 2</h2>
 
-<p>So, I realize it took me a while to jump on the WatchOS 2 train, but since Gulps was fairly good received, I wanted to be extra careful in handling the transition to the new OS. Just as a reminder, WatchOS 2 drastically changes how a watch app works, by moving the extension from the iPhone app to the Apple Watch itself.</p>
+<p>I do realize it took me a while to jump on the WatchOS 2 train, but since Gulps was fairly good received and reviewed, I wanted to be extra careful in handling the transition to the new OS. Just as a reminder, WatchOS 2 drastically changes how a watch app works, by moving the extension from the iPhone app to the Apple Watch itself.</p>
 
 <p><img class="center" src="http://fancypixel.github.io/images/posts/2015-11-24/architecture.png" width="500" title="'WatchOS 2'" ></p>
 
-<p>This has a major advantage: less spinning spinner of spinning boredom, the app is a lot snappier, and can rely a lot less from the phone (e.g. by making independent network requests).<br/>
+<p>This has a major advantages: less spinning spinner of spinning boredom, the app is a lot snappier, and can rely a lot less on the phone (e.g. by making independent network requests).<br/>
 That&rsquo;s cool, but it comes at a cost&hellip; sharing data as we did before is impossible.
 Apple provided a new framework though: <a href="https://developer.apple.com/library/watchos/documentation/WatchConnectivity/Reference/WatchConnectivity_framework/index.html">WatchConnectivity</a>.</p>
 
 <p>The framework offers different ways to enable the communication between the phone and the watch, but it can be really tricky to get everything working reliably.
-So, WatchOS 2 added some complexity and some complications 😬. Complications are small modules used to personalize the watch faces and show small tidbits of interesting data when the user glances at the time. Now we can finally add our own modules, and having the percentage of your daily water intake goal sounds pretty good.</p>
+We can say that WatchOS 2 added some complexity and some complications 😬.<br/>
+Complications are small modules used to personalize the watch faces and show small tidbits of interesting data when the user glances at the time. Now we can finally add our own modules, and having the percentage of your daily water intake goal sounds pretty good (so good that users started to request them the day after WatchOS 2&rsquo;s release).</p>
 
 <h2>Sharing</h2>
 
@@ -113,7 +115,7 @@ private func setupWatchConnectivity() {
 
 <h3>From phone to watch</h3>
 
-<p>All the utility functions to send and read data from the watch are held in a handy struct: <code>WatchConnectivityHelper</code>, and an instance of this struct is held by the <code>AppDelegate</code>. We need a way to be notified when a change occurs to our database, so that we can trigger an update to the application context. As I mentioned before, Realm makes this pretty easy, thanks to <a href="https://realm.io/docs/swift/latest/#notifications">Realm Notifications</a>. Soon after the session is set a new Realm notification is created (the token needs to be strongly held):</p>
+<p>All the utility functions to send and read data from the watch are held in a handy struct: <code>WatchConnectivityHelper</code>, and an instance of this struct is held by the <code>AppDelegate</code>. We need a way to be notified when a change occurs on our database, so that we can trigger an update to the application context. As I mentioned before, Realm makes this pretty easy, thanks to <a href="https://realm.io/docs/swift/latest/#notifications">Realm Notifications</a>. Soon after the session is set a new Realm notification is created (the token needs to be strongly held):</p>
 
 <pre><code class="swift">realmNotification = watchConnectivityHelper.setupWatchUpdates()
 </code></pre>
@@ -188,7 +190,7 @@ public func sendWatchData() {
 }
 </code></pre>
 
-<p>Since we are implementing all this in the Extension delegate, to update the interface (in the off chance that the user is staring at both his phone and watch with both apps running) we toss a notification through the <code>NSNotificationCenter</code>. Another approach would be to force a reload of the interface controller, but that would prevent animations.</p>
+<p>Since we are implementing all this in the Extension delegate, to update the interface (in the off chance that the user is staring at both his phone and watch with both apps running) we toss a notification through the <code>NSNotificationCenter</code>, letting the interface controller handle that with an animation. Another approach would be to force a reload of the interface controller, but that would prevent such animation.</p>
 
 <p>Luckily the communication between watch and phone works pretty much the same way.</p>
 
@@ -224,25 +226,8 @@ func getCurrentTimelineEntryForComplication(complication: CLKComplication, withH
         smallFlat.imageProvider = CLKImageProvider(onePieceImage: UIImage(named: "complication")!)
         smallFlat.tintColor = .mainColor()
         handler(smallFlat)
-    } else if complication.family == .UtilitarianLarge {
-        let largeFlat = CLKComplicationTemplateUtilitarianLargeFlat()
-        largeFlat.textProvider = CLKSimpleTextProvider(text: "Goal: 42%", shortText:"42%")
-        largeFlat.imageProvider = CLKImageProvider(onePieceImage: UIImage(named: "complication")!)
-        largeFlat.tintColor = .mainColor()
-        handler(largeFlat)
-    } else if complication.family == .CircularSmall {
-        let circularSmall = CLKComplicationTemplateCircularSmallRingImage()
-        circularSmall.imageProvider = CLKImageProvider(onePieceImage: UIImage(named: "complication")!)
-        circularSmall.ringStyle = .Closed
-        circularSmall.tintColor = .mainColor()
-        handler(circularSmall)
-    } else if complication.family == .ModularSmall {
-        let modularSmall = CLKComplicationTemplateModularSmallRingImage()
-        modularSmall.imageProvider = CLKImageProvider(onePieceImage: UIImage(named: "complication")!)
-        modularSmall.ringStyle = .Closed
-        modularSmall.tintColor = .mainColor()
-        handler(modularSmall)
-    }
+    } 
+    // ...
 }
 </code></pre>
 
@@ -253,10 +238,7 @@ func getCurrentTimelineEntryForComplication(complication: CLKComplication, withH
 <p>The final complication setup doesn&rsquo;t differ too much from the template, beside the obvious current value that replaces the pre baked placeholder:</p>
 
 <pre><code class="swift">func getCurrentTimelineEntryForComplication(complication: CLKComplication, withHandler handler: (CLKComplicationTimelineEntry?) -&gt; Void) {
-    var percentage = 0
-    if let storedPercentage = WatchEntryHelper.sharedHelper.percentage() {
-        percentage = storedPercentage
-    }
+    let percentage = WatchEntryHelper.sharedHelper.percentage() ?? 0
 
     if complication.family == .UtilitarianSmall {
         let smallFlat = CLKComplicationTemplateUtilitarianSmallFlat()
@@ -264,29 +246,12 @@ func getCurrentTimelineEntryForComplication(complication: CLKComplication, withH
         smallFlat.imageProvider = CLKImageProvider(onePieceImage: UIImage(named: "complication")!)
         smallFlat.tintColor = .mainColor()
         handler(CLKComplicationTimelineEntry(date: NSDate(), complicationTemplate: smallFlat))
-    } else if complication.family == .UtilitarianLarge {
-        let largeFlat = CLKComplicationTemplateUtilitarianLargeFlat()
-        largeFlat.textProvider = CLKSimpleTextProvider(text: "Goal: \(percentage)%", shortText: "\(percentage)%")
-        largeFlat.imageProvider = CLKImageProvider(onePieceImage: UIImage(named: "complication")!)
-        largeFlat.tintColor = .mainColor()
-        handler(CLKComplicationTimelineEntry(date: NSDate(), complicationTemplate: largeFlat))
-    } else if complication.family == .CircularSmall {
-        let circularSmall = CLKComplicationTemplateCircularSmallRingImage()
-        circularSmall.imageProvider = CLKImageProvider(onePieceImage: UIImage(named: "complication")!)
-        circularSmall.ringStyle = .Closed
-        circularSmall.fillFraction = Float(percentage) / 100.0
-        circularSmall.tintColor = .mainColor()
-        handler(CLKComplicationTimelineEntry(date: NSDate(), complicationTemplate: circularSmall))
-    } else if complication.family == .ModularSmall {
-        let modularSmall = CLKComplicationTemplateModularSmallRingImage()
-        modularSmall.imageProvider = CLKImageProvider(onePieceImage: UIImage(named: "complication")!)
-        modularSmall.ringStyle = .Closed
-        modularSmall.fillFraction = Float(percentage) / 100.0
-        modularSmall.tintColor = .mainColor()
-        handler(CLKComplicationTimelineEntry(date: NSDate(), complicationTemplate: modularSmall))
-    }
+    } 
+    // ...
 }
 </code></pre>
+
+<p>Check out the full source <a href="https://github.com/FancyPixel/gulps/blob/master/Gulps%20WatchKit%20Extension/ComplicationController.swift">here</a>.</p>
 
 <h3>Reloading complications</h3>
 
@@ -295,8 +260,8 @@ Finding a way to reset the percentage wasn&rsquo;t that straightforward, since I
 
 <p>As it turns out though, the data source protocol holds a pretty handy function:</p>
 
-<pre><code class="swift">/// This method will be called when you are woken due to a requested update. If your complication data has changed you can
-/// then call -reloadTimelineForComplication: or -extendTimelineForComplication: to trigger an update.
+<pre><code class="swift">/** This method will be called when you are woken due to a requested update. If your complication data has changed you can
+ then call -reloadTimelineForComplication: or -extendTimelineForComplication: to trigger an update. */
 optional public func requestedUpdateDidBegin()
 </code></pre>
 
@@ -305,13 +270,11 @@ optional public func requestedUpdateDidBegin()
 <pre><code class="swift">func requestedUpdateDidBegin() {
     let server = CLKComplicationServer.sharedInstance()
 
-    for comp in (server.activeComplications) {
-        server.reloadTimelineForComplication(comp)
-    }
+    server.activeComplications.forEach { server.reloadTimelineForComplication($0) }
 }
 </code></pre>
 
-<p>Since the model holds the date of the last update, it&rsquo;s easy to che when a percentage is stale:</p>
+<p>Since the model holds the date of the last update, it&rsquo;s easy to check when a percentage is stale:</p>
 
 <pre><code class="swift">/**
  Returns the current quantity
@@ -332,12 +295,16 @@ func quantity() -&gt; Double {
 }
 </code></pre>
 
-<p>And there it is. You can head to the <a href="https://github.com/FancyPixel/gulps">GitHub repo</a> of Gulps and compile it, or even better download it from the store (once the build passes review), and you&rsquo;ll notice that the WatchOS app is a lot snappier, and the comunication times between the two devices is pretty fast. I&rsquo;m pretty happy with it, but it required a good dose of patience. It might not seem now, but the <code>WatchConnectivity</code> framework has some pitfalls, it works great when you are learning it with a smaple app, but once you factor in an app just a little bit more complex, you&rsquo;re in for a treat. It doesn&rsquo;t help that getting the app compiled on a real device requires quite a lot time. You&rsquo;ll be seeing the loading spinner A LOT, soldier on.<br/>
+<p><img class="center" src="http://fancypixel.github.io/images/posts/2015-11-24/thereitis.gif" width="400" title="'Jeff'" ></p>
+
+<p>You can head to the <a href="https://github.com/FancyPixel/gulps">GitHub repo</a> of Gulps and compile it, or even better download it from the store, and you&rsquo;ll notice that the WatchOS app is a lot snappier, and the communication time between the two devices is pretty fast.</p>
+
+<p>I&rsquo;m pretty happy with it, but it required a good dose of patience. <code>WatchConnectivity</code> works great when you are learning it with a simple demo app, but once you factor in an app just a little bit more complex, you&rsquo;re in for a treat. In the end it all boils down to figuring out what <em>needs</em> to be transfered and <em>when</em>. It doesn&rsquo;t help that getting the app compiled on a real device requires quite a lot time. You&rsquo;ll be seeing the <a href="https://twitter.com/theandreamazz/status/658968255349063682">loading spinner</a> A LOT, soldier on.<br/>
 With that being said, in the end the app runs way smoother, so it&rsquo;s all worth it.</p>
 
 <h2>References</h2>
 
-<p>You can read more on the WatchConnectivity framework in <a href="http://natashatherobot.com/watchconnectivity-say-hello-to-wcsession/">this article</a> by Natasha Murashev (who was kind enough to contribute in the past to this project), <a href="http://www.kristinathai.com/watchos-2-how-to-communicate-between-devices-using-watch-connectivity/">this one</a> by Kristina Thai or <a href="http://www.raywenderlich.com/117329/watchos-2-tutorial-part-4-watch-connectivity">Raywenderlich&rsquo;s one</a> written by Mic Pringle.
+<p>You can read more on the WatchConnectivity framework in <a href="http://natashatherobot.com/watchconnectivity-say-hello-to-wcsession/">this article</a> by Natasha Murashev (who was also kind enough to contribute to this project), <a href="http://www.kristinathai.com/watchos-2-how-to-communicate-between-devices-using-watch-connectivity/">this one</a> by Kristina Thai or <a href="http://www.raywenderlich.com/117329/watchos-2-tutorial-part-4-watch-connectivity">Raywenderlich&rsquo;s one</a> written by Mic Pringle.<br/>
 Also Raywenderlich&rsquo;s <a href="http://www.raywenderlich.com/store/watchos-2-by-tutorials">“watchOS 2 by Tutorials”</a> was of great help, consider picking it up if you want to delve deeper into WatchOS development.</p>
 
 <p>Until next time,<br/>

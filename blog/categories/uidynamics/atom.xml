@@ -4,7 +4,7 @@
   <title><![CDATA[Category: uidynamics | Fancy Pixel]]></title>
   <link href="http://fancypixel.github.io/blog/categories/uidynamics/atom.xml" rel="self"/>
   <link href="http://fancypixel.github.io/"/>
-  <updated>2015-11-23T14:57:16+01:00</updated>
+  <updated>2015-11-25T10:17:12+01:00</updated>
   <id>http://fancypixel.github.io/</id>
   <author>
     <name><![CDATA[Fancy Pixel]]></name>
@@ -20,23 +20,12 @@
     <id>http://fancypixel.github.io/blog/2015/06/19/playing-with-uidynamics-in-ios-9</id>
     <content type="html"><![CDATA[<p>UIDynamics was a welcome addition to the iOS 7 SDK. It&rsquo;s basically a physics engine backing common UIViews, allowing us to define physics traits to the UI elements. The API is fairly straightforward, so you can easily create animations and transitions that look and feel great. I already covered the basics in <a href="http://andreamazz.github.io/blog/2014/05/22/uikit-dynamics/">this article</a> a while ago, this time we&rsquo;ll be looking at what&rsquo;s new in UIDynamics in iOS 9.</p>
 
-
-
-
 <!-- More -->
-
-
 
 
 <h2>Collision Bounds</h2>
 
-
-
-
 <p>The first release of UIDynamics shipped with a collision system (provided by <a href="https://developer.apple.com/library/ios/documentation/UIKit/Reference/UICollisionBehavior_Class/">UICollisionBehavior</a>) that only supported rectangular bodies. It made sense, since <code>UIView</code>s are backed by rectangular frames, but it&rsquo;s not uncommon to have a circular view, or even better our own custom Bezier path. With iOS 9 a new property has been added to the <code>UIDynamicItem</code> protocol: <code>UIDynamicItemCollisionBoundsType</code>, which accepts one of these enum values:</p>
-
-
-
 
 <ul>
 <li><code>Rectangle</code></li>
@@ -45,12 +34,7 @@
 </ul>
 
 
-
-
 <p>The property is readonly, so if we want to change it we need to provide our own subclass:</p>
-
-
-
 
 <pre><code class="swift">class Ellipse: UIView {
   override var collisionBoundsType: UIDynamicItemCollisionBoundsType {
@@ -59,122 +43,53 @@
 }
 </code></pre>
 
-
-
-
 <p>This is a UIView with the default collision bound:</p>
 
-
-
-
-<p><img class="center" src="http://fancypixel.github.io/images/posts/2015-06-19/slide.gif" width="500" title="'Slide'" ></p>
-
-
-
+<p><img class="center" src="/images/posts/2015-06-19/slide.gif" width="500" title="&lsquo;Slide&rsquo;" ></p>
 
 <p>This is the same UIView with the <code>.Ellipse</code>:</p>
 
-
-
-
-<p><img class="center" src="http://fancypixel.github.io/images/posts/2015-06-19/roll.gif" width="500" title="'Roll'" ></p>
-
-
-
+<p><img class="center" src="/images/posts/2015-06-19/roll.gif" width="500" title="&lsquo;Roll&rsquo;" ></p>
 
 <p>This covers round views, if we want to get fancy and draw a more complex view with a coherent rigid body we can use the enum property <code>.Path</code> and also override this property:</p>
-
-
-
 
 <pre><code class="swift">var collisionBoundingPath: UIBezierPath { get }
 </code></pre>
 
-
-
-
 <p>The path can be whatever you can think of, as long as it&rsquo;s convex (this means that for any given couple of points inside the polygon, the segment between the two is always entirely contained in the polygon itself) and counter-clockwise wound.<br/>
 The convex requirement could be a significant limit, so <code>UIDynamicItemGroup</code> was introduced to specify shapes as a group of different shapes. This way as long as each shape in the group is convex we are fine even if the resulting polygon composition is concave.</p>
 
-
-
-
 <h2>Field Behavior</h2>
-
-
-
 
 <p>Field behaviors are a new type of behavior that is applied to the whole scene. The most common example that we&rsquo;ve been using implicitly all along is <code>UIGravityBehavior</code>, which applies a down force to each item in the scene. Now we can use a new set of field forces, like Radial (the forces are stronger at the center and weaker around the edges), Noise (forces with different magnitudes are scattered around the field), and so on.</p>
 
-
-
-
 <h2>Dynamic Item Behavior</h2>
 
-
-
-
 <p><code>UIDynamicItemBehavior</code> received a couple of interesting new properties:</p>
-
-
-
 
 <pre><code class="ruby">var charge: CGFloat
 var anchored: Bool
 </code></pre>
 
-
-
-
 <p><code>charge</code> represent the <em>electric charge</em> that can influence how an item moves in an electric or magnetic field (yeah, it&rsquo;s bonkers), while <code>anchored</code> basically turns a shape into a static object that participates in the collisions, but without response (if something crashes into the item, it won&rsquo;t budge), so it&rsquo;s perfect to represent something like a floor or a wall.</p>
-
-
-
 
 <h2>Attachment Behavior</h2>
 
-
-
-
 <p><code>UIAttachmentBehavior</code> was revamped and now has a sleuth of new methods and properties, like <code>frictionTorque</code> and <code>attachmentRange</code>. The attachments can now be more flexible, we can specify relative sliding movements, fixed attachments, rope attachments and what I like the most: pin attachment. Think of two objects nailed together and you get the idea.</p>
-
-
-
 
 <p>This more or less covers what&rsquo;s new in UIDynamics, now it&rsquo;s time to drop the changelog and start building something silly.</p>
 
-
-
-
 <h1>Let&rsquo;s play ball</h1>
-
-
-
 
 <p>I&rsquo;ve been spending a lot of idle time with <a href="https://itunes.apple.com/us/app/ball-king/id946496840?mt=8">Ball King</a> in the last week. It&rsquo;s a brilliant little time waster, the concept is simple but well executed. Also it adopts the same monetization policies of the Apple design winner Crossy Road: it doesn&rsquo;t bother the player in any way. Kudos.</p>
 
-
-
-
-<p><img class="center" src="http://fancypixel.github.io/images/posts/2015-06-19/ballking.jpeg" width="322" height="572" title="'Ball King'" ></p>
-
-
-
+<p><img class="center" src="/images/posts/2015-06-19/ballking.jpeg" width="322" height="572" title="&lsquo;Ball King&rsquo;" ></p>
 
 <p>One thing I really like about it is the physic model of the ball and how the hoop&rsquo;s backboard reacts when it gets hit by it. Looks like a fun exercise to test out the new UIDynamics stuff listed above. Let&rsquo;s take a step by step look at how to build our own scruffy version: <a href="https://github.com/FancyPixel/BallSwift">BallSwift</a></p>
 
-
-
-
 <h2>The hoop</h2>
 
-
-
-
 <p>The basket can be created with a single UIView acting as the backboard, a couple of views with rigid bodies as the left and right arms of the hoop, and a frontmost view as the hoop itself (without a physic body). Using the previously defined class <code>Ellipse</code> we can create the visual representation of our game scene:</p>
-
-
-
 
 <pre><code class="swift">/* 
 Build the hoop, setup the world appearance
@@ -209,33 +124,15 @@ func buildViews() {
 }
 </code></pre>
 
-
-
-
 <p>Nothing new here, the hoop is created programmatically and is placed in the constant <code>CGPoint hoopPosition</code>. The order of the views is important though, since we want the hoop to be above the basket ball.</p>
-
-
-
 
 <h2>Nuts and bolts</h2>
 
-
-
-
 <p>The most important part of the hoop are the left and right <em>arms</em>. They need a physical round body (so that the collision with the ball is smooth) and need to be bolted to the board and the front hoop. These two will be basic <code>UIDynamicItem</code>s and won&rsquo;t partecipate directly in the collisions. The newly introduced pin attachment is perfect for this job, it can hold everything together quite nicely as we can see in this rather ugly drawing:</p>
 
-
-
-
-<p><img class="center" src="http://fancypixel.github.io/images/posts/2015-06-19/hoop.png" width="600" height="400" title="'Hoop'" ></p>
-
-
-
+<p><img class="center" src="/images/posts/2015-06-19/hoop.png" width="600" height="400" title="&lsquo;Hoop&rsquo;" ></p>
 
 <p>The pin can be attached only to a couple of views at a time, within a given absolute spatial point:</p>
-
-
-
 
 <pre><code class="swift">let bolts = [
   CGPoint(x: hoopPosition.x + 25, y: hoopPosition.y + 85), // leftHoop -&gt; Board
@@ -250,13 +147,7 @@ zip([leftHoop, rightHoop, hoop, hoop], offsets).map({
 })
 </code></pre>
 
-
-
-
 <p>If you&rsquo;re not participating in the race to Swift&rsquo;s functional awesomeness you&rsquo;re probably not familiar with zip and map. It might seem contrived at first, but it&rsquo;s rather simple: each view is coupled with the offset point in which we&rsquo;re going to pin the attachment, resulting in an array of tuples that is then used in the map function that, as the name suggests, creates a mapping with each element of the array with the provided closure. This results in both the left and right arms of the hoop to be bolted to the board and the front hoop as follows:</p>
-
-
-
 
 <ul>
 <li>Left arm bolted to the left of the board</li>
@@ -266,12 +157,7 @@ zip([leftHoop, rightHoop, hoop, hoop], offsets).map({
 </ul>
 
 
-
-
 <p>The next step requires us to <em>hang</em> the board, letting it rest loosely, so that a collision can cause it to swivel a bit like it does in Ball King:</p>
-
-
-
 
 <pre><code class="swift">// Set the density of the hoop, and fix its angle
 // Hang the hoop
@@ -297,13 +183,7 @@ animator?.addBehavior({
   }())
 </code></pre>
 
-
-
-
 <p>The hoop is ready to go. Let&rsquo;s take care of the ball, starting with a custom subclass of <code>UIImageView</code> with a rounded physics body, just like the <code>Ellipse</code> class:</p>
-
-
-
 
 <pre><code class="swift">class Ball: UIImageView {
   override var collisionBoundsType: UIDynamicItemCollisionBoundsType {
@@ -312,13 +192,7 @@ animator?.addBehavior({
 }
 </code></pre>
 
-
-
-
 <p>We can then istantiate the ball as a common UIImageView:</p>
-
-
-
 
 <pre><code class="swift">let ball: Ball = {
   let ball = Ball(frame: CGRect(x: 0, y: 0, width: 28, height: 28))
@@ -327,13 +201,7 @@ animator?.addBehavior({
 }()
 </code></pre>
 
-
-
-
 <p>Finally we set its physical properties:</p>
-
-
-
 
 <pre><code class="swift">// Set the elasticity and density of the ball
 animator?.addBehavior({
@@ -350,23 +218,11 @@ animator?.addBehavior({
   }())
 </code></pre>
 
-
-
-
 <p>In this bit of code I set the elasticity (how much it should bounce after a collision), density (think of it as the <em>weight</em>) and a handy action closure that resets the world state when the ball exits the play area (the main view).</p>
-
-
-
 
 <h2>Collisions and gravity</h2>
 
-
-
-
 <p>I mentioned the new <code>anchored</code> property of <code>UIDynamicItemBehavior</code>, which disables the dynamic behavior of an object while keeping it in the collision&rsquo;s loop. Sounds like a great way to build a steady floor:</p>
-
-
-
 
 <pre><code class="swift">// Anchor the floor
 animator?.addBehavior({
@@ -376,26 +232,14 @@ animator?.addBehavior({
   }())
 </code></pre>
 
-
-
-
 <p>Forget to set this property and you&rsquo;ll be scratching your head a lot. I know I did.<br/>
 Ok, everything is set, it just needs some gravity and a set of collisions:</p>
-
-
-
 
 <pre><code class="swift">animator?.addBehavior(UICollisionBehavior(items: [leftHoop, rightHoop, floor, ball]))
 animator?.addBehavior(UIGravityBehavior(items: [ball]))
 </code></pre>
 
-
-
-
 <p>The gravity is a field behavior that applies a down force of 1 point per second as default. The collision behavior takes as parameter only the views that should collide with each other. The world is set up, now we can apply an instantaneous force to the ball and keep our fingers crossed:</p>
-
-
-
 
 <pre><code class="swift">let push = UIPushBehavior(items: [ball], mode: .Instantaneous)
 push.angle = -1.35
@@ -403,27 +247,14 @@ push.magnitude = 1.56
 animator?.addBehavior(push)
 </code></pre>
 
-
-
-
-<p><img class="center" src="http://fancypixel.github.io/images/posts/2015-06-19/ball.gif" width="500" height="820" title="'BallSwift'" ></p>
-
-
-
+<p><img class="center" src="/images/posts/2015-06-19/ball.gif" width="500" height="820" title="&lsquo;BallSwift&rsquo;" ></p>
 
 <p>And there you go, it&rsquo;s really rough around the edges, but that was a lot of fun to build (yes, the clouds and the bushes are the same drawing, like in <a href="https://www.youtube.com/watch?v=ai7d1K4Yf6A">Super Mario</a>).<br/>
 As always you can find the source on our <a href="https://github.com/FancyPixel/BallSwift">GitHub page</a>.</p>
 
-
-
-
 <p>Until next time,</p>
 
-
-
-
 <p>Andrea - <em><a href="https://twitter.com/theandreamazz">@theandreamazz</a></em></p>
-
 ]]></content>
   </entry>
   

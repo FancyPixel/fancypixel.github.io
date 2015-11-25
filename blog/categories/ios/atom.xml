@@ -4,7 +4,7 @@
   <title><![CDATA[Category: ios | Fancy Pixel]]></title>
   <link href="http://fancypixel.github.io/blog/categories/ios/atom.xml" rel="self"/>
   <link href="http://fancypixel.github.io/"/>
-  <updated>2015-11-23T14:57:16+01:00</updated>
+  <updated>2015-11-25T10:19:18+01:00</updated>
   <id>http://fancypixel.github.io/</id>
   <author>
     <name><![CDATA[Fancy Pixel]]></name>
@@ -19,83 +19,44 @@
     <updated>2015-11-24T14:35:45+01:00</updated>
     <id>http://fancypixel.github.io/blog/2015/11/24/moving-to-watchos-2</id>
     <content type="html"><![CDATA[<p>A while ago we released Gulps on the <a href="https://itunes.apple.com/us/app/gulps/id979057304?ls=1&amp;mt=8">AppStore</a>. Gulps is a simple water tracking app that also reminds you when to drink throughout the day.<br/>
-This was an app of &ldquo;firsts&rdquo; for me. First Swift app, first full app open sourced, first WatchKit app, first HealthKit app, first 3D touch implementation. It&rsquo;s my go-to app when I need to experiment with new stuff. The streak continues with WatchOS 2. In this post we&rsquo;ll cover how to share data between the main app and the watch extension with the WatchConnectivity framework, and how to create a simple set of watch face complications. As an added bonus we&rsquo;ll be doing that with a full open source app, that&rsquo;s live on the AppStore. Off we go.</p>
-
-
-
+This was an app of &ldquo;firsts&rdquo; for me: first Swift app, first full app open sourced, first WatchKit app, first HealthKit app, first 3D touch implementation. It&rsquo;s my go-to app when I need to experiment with new stuff. The streak continues with WatchOS 2.<br/>
+In this post we&rsquo;ll cover how to share data between the main app and the watch extension with the WatchConnectivity framework, and how to create a simple set of watch face complications. As an added bonus we&rsquo;ll be doing that with a full open source app, that&rsquo;s live on the AppStore. Off we go.</p>
 
 <!-- More -->
 
 
-
-
 <h2>Gulps</h2>
 
-
-
-
-<p>The previous version of <a href="https://itunes.apple.com/us/app/gulps/id979057304?ls=1&amp;mt=8">Gulps</a> relied on Apple&rsquo;s <a href="https://developer.apple.com/library/prerelease/ios/documentation/General/Conceptual/ExtensibilityPG/ExtensionScenarios.html#//apple_ref/doc/uid/TP40014214-CH21-SW1">App grouping</a> to share data between the app and the watch extension. The data was stored on <a href="http://ream.io">Realm</a>, and thanks to its notification system, the watch app was always kept up to date when a change occurred. This was possible because the watch extension used to live on the phone alongside the main app. It was a brilliant system, and so easy to implement&hellip; my heart sank when Apple announced that the watch extension was going to live on the watch. I knew that a storm of refactoring was coming. Before opening that can of worms, let&rsquo;s reminisce about the good old times.
+<p>The previous version of <a href="https://itunes.apple.com/us/app/gulps/id979057304?ls=1&amp;mt=8">Gulps</a> relied on Apple&rsquo;s <a href="https://developer.apple.com/library/prerelease/ios/documentation/General/Conceptual/ExtensibilityPG/ExtensionScenarios.html#//apple_ref/doc/uid/TP40014214-CH21-SW1">App grouping</a> to share data between the app and the watch extension. The data was stored on <a href="http://ream.io">Realm</a>, and thanks to its notification system, the watch app was always kept up to date when a change occurred. This was possible because the watch extension used to live on the phone alongside the main app. It was a brilliant system, and so easy to implement&hellip; my heart sank when Apple announced that they were moving the watch extension on the watch itself. I knew that a storm of refactoring was coming. Before opening that can of worms, let&rsquo;s reminisce about the good old times.<br/>
 This is the setup for a WatchOS 1 app:</p>
-
-
-
 
 <pre><code class="swift">realmToken = RLMRealm.defaultRealm().addNotificationBlock { note, realm in
     self.reloadAndUpdateUI()
 }
 </code></pre>
 
+<p>Once a change occurred on the phone or on the Watch app, a broadcast notification was fired, triggering a closure that updated the UI. <br/>
+If you want to know more about Realm and app grouping, checkout <a href="http://fancypixel.github.io/blog/2015/03/29/share-data-between-watchkit-and-your-app-with-realm/">this article</a> by yours truly. It still is the best way to share data between the main app and an extension (e.g: a today widget).</p>
 
-
-
-<p>Once a change occurred on the phone or on the Watch app, a broadcast notification was fired, triggering a closure that updated the UI.<br/>
-If you want to know more on Realm and app grouping, checkout <a href="http://fancypixel.github.io/blog/2015/03/29/share-data-between-watchkit-and-your-app-with-realm/">this article</a> by yours truly.</p>
-
-
-
-
-<p><img class="center" src="http://fancypixel.github.io/images/posts/2015-11-24/gulps.png" width="500" title="'Gulps'" ></p>
-
-
-
+<p>{% img center /images/posts/2015-11-24/gulps.png 500 &lsquo;Gulps&rsquo; %}</p>
 
 <h2>WatchOS 2</h2>
 
+<p>I do realize it took me a while to jump on the WatchOS 2 train, but since Gulps was fairly good received and reviewed, I wanted to be extra careful in handling the transition to the new OS. Just as a reminder, WatchOS 2 drastically changes how a watch app works, by moving the extension from the iPhone app to the Apple Watch itself.</p>
 
+<p>{% img center /images/posts/2015-11-24/architecture.png 500 &lsquo;WatchOS 2&rsquo; %}</p>
 
-
-<p>So, I realize it took me a while to jump on the WatchOS 2 train, but since Gulps was fairly good received, I wanted to be extra careful in handling the transition to the new OS. Just as a reminder, WatchOS 2 drastically changes how a watch app works, by moving the extension from the iPhone app to the Apple Watch itself.</p>
-
-
-
-
-<p><img class="center" src="http://fancypixel.github.io/images/posts/2015-11-24/architecture.png" width="500" title="'WatchOS 2'" ></p>
-
-
-
-
-<p>This has a major advantage: less spinning spinner of spinning boredom, the app is a lot snappier, and can rely a lot less from the phone (e.g. by making independent network requests).<br/>
+<p>This has a major advantages: less spinning spinner of spinning boredom, the app is a lot snappier, and can rely a lot less on the phone (e.g. by making independent network requests).<br/>
 That&rsquo;s cool, but it comes at a cost&hellip; sharing data as we did before is impossible.
 Apple provided a new framework though: <a href="https://developer.apple.com/library/watchos/documentation/WatchConnectivity/Reference/WatchConnectivity_framework/index.html">WatchConnectivity</a>.</p>
 
-
-
-
 <p>The framework offers different ways to enable the communication between the phone and the watch, but it can be really tricky to get everything working reliably.
-So, WatchOS 2 added some complexity and some complications 😬. Complications are small modules used to personalize the watch faces and show small tidbits of interesting data when the user glances at the time. Now we can finally add our own modules, and having the percentage of your daily water intake goal sounds pretty good.</p>
-
-
-
+We can say that WatchOS 2 added some complexity and some complications 😬.<br/>
+Complications are small modules used to personalize the watch faces and show small tidbits of interesting data when the user glances at the time. Now we can finally add our own modules, and having the percentage of your daily water intake goal sounds pretty good (so good that users started to request them the day after WatchOS 2&rsquo;s release).</p>
 
 <h2>Sharing</h2>
 
-
-
-
 <p><code>WatchConnectivity</code> introduces four main ways to communicate between the phone and watch:</p>
-
-
-
 
 <ul>
 <li><em>Application Context</em>, a dictionary with the latest up to date information. It&rsquo;s transferred by the system in the background, and each new entry overwrites the old one. This is great to share the application current state</li>
@@ -105,24 +66,13 @@ So, WatchOS 2 added some complexity and some complications 😬. Complications a
 </ul>
 
 
-
-
 <p>For Gulps I picked <em>Application Context</em> sharing, since the current state of the daily progress is what really matters, and the user hardly uses both apps at the same time (although since the transfer is pretty fast, when he does, the feedback is still snappy).<br/>
 All the code is available on <a href="https://github.com/FancyPixel/gulps">GitHub</a>, for sharing the data we&rsquo;ll reference the <code>WatchConnectivityHelper</code> and <code>WatchEntryHelper</code>: <a href="https://github.com/FancyPixel/gulps/blob/master/Gulps/Support/WatchConnectivityHelper.swift">here</a> and <a href="https://github.com/FancyPixel/gulps/blob/master/Gulps%20WatchKit%20Extension/WatchEntryHelper.swift">here</a>.</p>
 
-
-
-
 <h3>Setting up the session</h3>
-
-
-
 
 <p>Before communicating back and forth we need to enable the watch session on both the phone and the watch. We do this using <code>WatchConnectivity</code>&rsquo;s singleton <code>WCSession</code>.<br/>
 The session must be initiated as soon as possible, so the <code>AppDelegate</code> sounds like a reasonable place to to that on the phone counterpart:</p>
-
-
-
 
 <pre><code class="swift">public func setupWatchConnectivity(delegate delegate: WCSessionDelegate) {
     guard WCSession.isSupported() else {
@@ -135,29 +85,14 @@ The session must be initiated as soon as possible, so the <code>AppDelegate</cod
 }
 </code></pre>
 
-
-
-
 <p>The <code>WCSessionDelegate</code> protocol declares all the functions that can be triggered by the session. We only need to implement this one if we are interested in the application context, though:</p>
-
-
-
 
 <pre><code class="swift">func session(session: WCSession, didReceiveApplicationContext applicationContext: [String : AnyObject])
 </code></pre>
 
-
-
-
 <p>As the signature suggests, this is fired when there is an update in the application context, and the second parameter is the context itself, represented by a dictionary. We&rsquo;ll cover this later.</p>
 
-
-
-
 <p>Once the phone is set up we need to do pretty much the same on the watch side. A good place to initiate the session on the watch is in the <a href="https://developer.apple.com/library/watchos/documentation/WatchKit/Reference/WKExtensionDelegate_protocol/index.html">watch extension delegate</a>:</p>
-
-
-
 
 <pre><code class="swift">func applicationDidFinishLaunching() {
     setupWatchConnectivity()
@@ -176,34 +111,16 @@ private func setupWatchConnectivity() {
 }
 </code></pre>
 
-
-
-
 <p>All set up, time to think about how to communicate.</p>
-
-
-
 
 <h3>From phone to watch</h3>
 
-
-
-
-<p>All the utility functions to send and read data from the watch are held in a handy struct: <code>WatchConnectivityHelper</code>, and an instance of this struct is held by the <code>AppDelegate</code>. We need a way to be notified when a change occurs to our database, so that we can trigger an update to the application context. As I mentioned before, Realm makes this pretty easy, thanks to <a href="https://realm.io/docs/swift/latest/#notifications">Realm Notifications</a>. Soon after the session is set a new Realm notification is created (the token needs to be strongly held):</p>
-
-
-
+<p>All the utility functions to send and read data from the watch are held in a handy struct: <code>WatchConnectivityHelper</code>, and an instance of this struct is held by the <code>AppDelegate</code>. We need a way to be notified when a change occurs on our database, so that we can trigger an update to the application context. As I mentioned before, Realm makes this pretty easy, thanks to <a href="https://realm.io/docs/swift/latest/#notifications">Realm Notifications</a>. Soon after the session is set a new Realm notification is created (the token needs to be strongly held):</p>
 
 <pre><code class="swift">realmNotification = watchConnectivityHelper.setupWatchUpdates()
 </code></pre>
 
-
-
-
 <p><code>setupWatchUpdates</code> implementation is straightforward:</p>
-
-
-
 
 <pre><code class="swift">/**
  Updates data on WatchOS, and listens for changes
@@ -219,19 +136,10 @@ public func setupWatchUpdates() -&gt; RLMNotificationToken {
 }
 </code></pre>
 
-
-
-
 <p>This opportunistically sends the current status right away, and creates a new token that, once a change is triggered, calls again the method that sends the application context.</p>
-
-
-
 
 <p>This is a good time to think about what we really need on the watch, and model our application context accordingly. We want to keep the data transfer at a minimum to avoid lengthy transfer times, while having all what we need at hand.
 For my purpose all I need is the current user status, his daily goal and his portion sizes (they might change over time, so they need to be refreshed often).</p>
-
-
-
 
 <pre><code class="swift">public class func watchData(current current: Double) -&gt; [String: Double] {
     let userDefaults = NSUserDefaults.groupUserDefaults()
@@ -243,13 +151,7 @@ For my purpose all I need is the current user status, his daily goal and his por
 }
 </code></pre>
 
-
-
-
 <p>Once the data packet is ready we can shoot it to the watch:</p>
-
-
-
 
 <pre><code class="swift">/**
  Sends the current data to WatchOS
@@ -272,18 +174,9 @@ public func sendWatchData() {
 }
 </code></pre>
 
-
-
-
 <p>To send the new context we need to make sure that the watch app is in fact installed, and then we call <code>updateApplicationContext(_:)</code>, function that might throw, so it needs to be called with <code>try</code>.</p>
 
-
-
-
 <p>On the watch end we need to wait for a <code>WCSessionDelegate</code> call and store the new stuff:</p>
-
-
-
 
 <pre><code class="swift">func session(session: WCSession, didReceiveApplicationContext applicationContext: [String : AnyObject]) {
     if let goal = applicationContext[Constants.Gulp.Goal.key()] as? Double,
@@ -297,76 +190,34 @@ public func sendWatchData() {
 }
 </code></pre>
 
-
-
-
-<p>Since we are implementing all this in the Extension delegate, to update the interface (in the off chance that the user is staring at both his phone and watch with both apps running) we toss a notification through the <code>NSNotificationCenter</code>. Another approach would be to force a reload of the interface controller, but that would prevent animations.</p>
-
-
-
+<p>Since we are implementing all this in the Extension delegate, to update the interface (in the off chance that the user is staring at both his phone and watch with both apps running) we toss a notification through the <code>NSNotificationCenter</code>, letting the interface controller handle that with an animation. Another approach would be to force a reload of the interface controller, but that would prevent such animation.</p>
 
 <p>Luckily the communication between watch and phone works pretty much the same way.</p>
 
-
-
-
 <p>You&rsquo;ll notice that once the application context updates I also reload the complications, let&rsquo;s talk about that.</p>
-
-
-
 
 <h2>Life is not that complicated</h2>
 
-
-
-
 <p>Complications are elements that live on the watch face and can be customized by the user. There are different kinds of complications with different sizes, depending on the space that they are displayed on. These are the possible complication families that we can implement:</p>
 
-
-
-
-<p><img class="center" src="http://fancypixel.github.io/images/posts/2015-11-24/complications.png" width="500" title="'Complications'" ></p>
-
-
-
+<p>{% img center /images/posts/2015-11-24/complications.png 500 &lsquo;Complications&rsquo; %}</p>
 
 <p>Complications are provided by a single object that implements the <code>CLKComplicationDataSource</code> protocol. This object is declared straight in the watch app&rsquo;s Info.plist file, and gets loaded automatically by the system.<br/>
 A single complication can offer a static snapshot of the current situation (the current temperature, your activity data, or in Gulp&rsquo;s case the current daily goal&rsquo;s completion rate), and it also can offer time travel features, allowing the user to nudge the digital crown to have a past or future snapshot. Time travel is great for apps that already know the future, but won&rsquo;t fit the bill with Gulps, so you won&rsquo;t see its implementation here. If you want to learn more, jump to the end of this post for a bunch of references.</p>
 
-
-
-
 <h3>CLKComplicationDataSource</h3>
 
-
-
-
 <p>In our case the datasource methods that need an implementation are these two:</p>
-
-
-
 
 <pre><code class="swift">func getPlaceholderTemplateForComplication(complication: CLKComplication, withHandler handler: (CLKComplicationTemplate?) -&gt; Void)
 func getCurrentTimelineEntryForComplication(complication: CLKComplication, withHandler handler: (CLKComplicationTimelineEntry?) -&gt; Void)
 </code></pre>
 
-
-
-
 <p>The first function requests a template for a given complication type. A template is a simple static placeholder that is shown to the user while he&rsquo;s configuring the watch face. The second function requests the current complication that needs to be loaded. They both require you to call a completion handler with the correct object for each complication you support. You declare the support to a given complication type in the project&rsquo;s settings.</p>
 
-
-
-
-<p><img class="center" src="http://fancypixel.github.io/images/posts/2015-11-24/settings.png" width="500" title="'Settings'" ></p>
-
-
-
+<p>{% img center /images/posts/2015-11-24/settings.png 500 &lsquo;Settings&rsquo; %}</p>
 
 <p>Let&rsquo;s take a look at the templates:</p>
-
-
-
 
 <pre><code class="swift">func getPlaceholderTemplateForComplication(complication: CLKComplication, withHandler handler: (CLKComplicationTemplate?) -&gt; Void) {
     if complication.family == .UtilitarianSmall {
@@ -375,51 +226,19 @@ func getCurrentTimelineEntryForComplication(complication: CLKComplication, withH
         smallFlat.imageProvider = CLKImageProvider(onePieceImage: UIImage(named: "complication")!)
         smallFlat.tintColor = .mainColor()
         handler(smallFlat)
-    } else if complication.family == .UtilitarianLarge {
-        let largeFlat = CLKComplicationTemplateUtilitarianLargeFlat()
-        largeFlat.textProvider = CLKSimpleTextProvider(text: "Goal: 42%", shortText:"42%")
-        largeFlat.imageProvider = CLKImageProvider(onePieceImage: UIImage(named: "complication")!)
-        largeFlat.tintColor = .mainColor()
-        handler(largeFlat)
-    } else if complication.family == .CircularSmall {
-        let circularSmall = CLKComplicationTemplateCircularSmallRingImage()
-        circularSmall.imageProvider = CLKImageProvider(onePieceImage: UIImage(named: "complication")!)
-        circularSmall.ringStyle = .Closed
-        circularSmall.tintColor = .mainColor()
-        handler(circularSmall)
-    } else if complication.family == .ModularSmall {
-        let modularSmall = CLKComplicationTemplateModularSmallRingImage()
-        modularSmall.imageProvider = CLKImageProvider(onePieceImage: UIImage(named: "complication")!)
-        modularSmall.ringStyle = .Closed
-        modularSmall.tintColor = .mainColor()
-        handler(modularSmall)
-    }
+    } 
+    // ...
 }
 </code></pre>
 
-
-
-
 <p>Pretty mundane bit of code, we check which complication family was requested, and we provide one. Complications have many settings and preset types, so I encourage you to check Apple&rsquo;s <a href="https://developer.apple.com/library/watchos/documentation/ClockKit/Reference/ClockKit_framework/index.html#//apple_ref/doc/uid/TP40016082">reference guide</a>.</p>
 
-
-
-
-<p><img class="center" src="http://fancypixel.github.io/images/posts/2015-11-24/template.png" width="300" title="'Template'" ></p>
-
-
-
+<p>{% img center /images/posts/2015-11-24/template.png 300 &lsquo;Template&rsquo; %}</p>
 
 <p>The final complication setup doesn&rsquo;t differ too much from the template, beside the obvious current value that replaces the pre baked placeholder:</p>
 
-
-
-
 <pre><code class="swift">func getCurrentTimelineEntryForComplication(complication: CLKComplication, withHandler handler: (CLKComplicationTimelineEntry?) -&gt; Void) {
-    var percentage = 0
-    if let storedPercentage = WatchEntryHelper.sharedHelper.percentage() {
-        percentage = storedPercentage
-    }
+    let percentage = WatchEntryHelper.sharedHelper.percentage() ?? 0
 
     if complication.family == .UtilitarianSmall {
         let smallFlat = CLKComplicationTemplateUtilitarianSmallFlat()
@@ -427,78 +246,35 @@ func getCurrentTimelineEntryForComplication(complication: CLKComplication, withH
         smallFlat.imageProvider = CLKImageProvider(onePieceImage: UIImage(named: "complication")!)
         smallFlat.tintColor = .mainColor()
         handler(CLKComplicationTimelineEntry(date: NSDate(), complicationTemplate: smallFlat))
-    } else if complication.family == .UtilitarianLarge {
-        let largeFlat = CLKComplicationTemplateUtilitarianLargeFlat()
-        largeFlat.textProvider = CLKSimpleTextProvider(text: "Goal: \(percentage)%", shortText: "\(percentage)%")
-        largeFlat.imageProvider = CLKImageProvider(onePieceImage: UIImage(named: "complication")!)
-        largeFlat.tintColor = .mainColor()
-        handler(CLKComplicationTimelineEntry(date: NSDate(), complicationTemplate: largeFlat))
-    } else if complication.family == .CircularSmall {
-        let circularSmall = CLKComplicationTemplateCircularSmallRingImage()
-        circularSmall.imageProvider = CLKImageProvider(onePieceImage: UIImage(named: "complication")!)
-        circularSmall.ringStyle = .Closed
-        circularSmall.fillFraction = Float(percentage) / 100.0
-        circularSmall.tintColor = .mainColor()
-        handler(CLKComplicationTimelineEntry(date: NSDate(), complicationTemplate: circularSmall))
-    } else if complication.family == .ModularSmall {
-        let modularSmall = CLKComplicationTemplateModularSmallRingImage()
-        modularSmall.imageProvider = CLKImageProvider(onePieceImage: UIImage(named: "complication")!)
-        modularSmall.ringStyle = .Closed
-        modularSmall.fillFraction = Float(percentage) / 100.0
-        modularSmall.tintColor = .mainColor()
-        handler(CLKComplicationTimelineEntry(date: NSDate(), complicationTemplate: modularSmall))
-    }
+    } 
+    // ...
 }
 </code></pre>
 
-
-
+<p>Check out the full source <a href="https://github.com/FancyPixel/gulps/blob/master/Gulps%20WatchKit%20Extension/ComplicationController.swift">here</a>.</p>
 
 <h3>Reloading complications</h3>
-
-
-
 
 <p>So, the user fills his progress, goes to sleep, picks up the watch in the morning and&hellip; there it is&hellip; his previous percentage still showing.<br/>
 Finding a way to reset the percentage wasn&rsquo;t that straightforward, since I&rsquo;m only refreshing the complications when a new portion is added.</p>
 
-
-
-
 <p>As it turns out though, the data source protocol holds a pretty handy function:</p>
 
-
-
-
-<pre><code class="swift">/// This method will be called when you are woken due to a requested update. If your complication data has changed you can
-/// then call -reloadTimelineForComplication: or -extendTimelineForComplication: to trigger an update.
+<pre><code class="swift">/** This method will be called when you are woken due to a requested update. If your complication data has changed you can
+ then call -reloadTimelineForComplication: or -extendTimelineForComplication: to trigger an update. */
 optional public func requestedUpdateDidBegin()
 </code></pre>
 
-
-
-
 <p>A-ha! WatchOS asks your complications how they are feeling every once in a while&hellip; so kind of him. We can use this opportunity to reset the complications:</p>
-
-
-
 
 <pre><code class="swift">func requestedUpdateDidBegin() {
     let server = CLKComplicationServer.sharedInstance()
 
-    for comp in (server.activeComplications) {
-        server.reloadTimelineForComplication(comp)
-    }
+    server.activeComplications.forEach { server.reloadTimelineForComplication($0) }
 }
 </code></pre>
 
-
-
-
-<p>Since the model holds the date of the last update, it&rsquo;s easy to che when a percentage is stale:</p>
-
-
-
+<p>Since the model holds the date of the last update, it&rsquo;s easy to check when a percentage is stale:</p>
 
 <pre><code class="swift">/**
  Returns the current quantity
@@ -519,29 +295,20 @@ func quantity() -&gt; Double {
 }
 </code></pre>
 
+<p>{% img center /images/posts/2015-11-24/thereitis.gif 400 &lsquo;Jeff&rsquo; %}</p>
 
+<p>You can head to the <a href="https://github.com/FancyPixel/gulps">GitHub repo</a> of Gulps and compile it, or even better download it from the store, and you&rsquo;ll notice that the WatchOS app is a lot snappier, and the communication time between the two devices is pretty fast.</p>
 
-
-<p>And there it is. You can head to the <a href="https://github.com/FancyPixel/gulps">GitHub repo</a> of Gulps and compile it, or even better download it from the store (once the build passes review), and you&rsquo;ll notice that the WatchOS app is a lot snappier, and the comunication times between the two devices is pretty fast. I&rsquo;m pretty happy with it, but it required a good dose of patience. It might not seem now, but the <code>WatchConnectivity</code> framework has some pitfalls, it works great when you are learning it with a smaple app, but once you factor in an app just a little bit more complex, you&rsquo;re in for a treat. It doesn&rsquo;t help that getting the app compiled on a real device requires quite a lot time. You&rsquo;ll be seeing the loading spinner A LOT, soldier on.<br/>
+<p>I&rsquo;m pretty happy with it, but it required a good dose of patience. <code>WatchConnectivity</code> works great when you are learning it with a simple demo app, but once you factor in an app just a little bit more complex, you&rsquo;re in for a treat. In the end it all boils down to figuring out what <em>needs</em> to be transfered and <em>when</em>. It doesn&rsquo;t help that getting the app compiled on a real device requires quite a lot time. You&rsquo;ll be seeing the <a href="https://twitter.com/theandreamazz/status/658968255349063682">loading spinner</a> A LOT, soldier on.<br/>
 With that being said, in the end the app runs way smoother, so it&rsquo;s all worth it.</p>
-
-
-
 
 <h2>References</h2>
 
-
-
-
-<p>You can read more on the WatchConnectivity framework in <a href="http://natashatherobot.com/watchconnectivity-say-hello-to-wcsession/">this article</a> by Natasha Murashev (who was kind enough to contribute in the past to this project), <a href="http://www.kristinathai.com/watchos-2-how-to-communicate-between-devices-using-watch-connectivity/">this one</a> by Kristina Thai or <a href="http://www.raywenderlich.com/117329/watchos-2-tutorial-part-4-watch-connectivity">Raywenderlich&rsquo;s one</a> written by Mic Pringle.
+<p>You can read more on the WatchConnectivity framework in <a href="http://natashatherobot.com/watchconnectivity-say-hello-to-wcsession/">this article</a> by Natasha Murashev (who was also kind enough to contribute to this project), <a href="http://www.kristinathai.com/watchos-2-how-to-communicate-between-devices-using-watch-connectivity/">this one</a> by Kristina Thai or <a href="http://www.raywenderlich.com/117329/watchos-2-tutorial-part-4-watch-connectivity">Raywenderlich&rsquo;s one</a> written by Mic Pringle.<br/>
 Also Raywenderlich&rsquo;s <a href="http://www.raywenderlich.com/store/watchos-2-by-tutorials">“watchOS 2 by Tutorials”</a> was of great help, consider picking it up if you want to delve deeper into WatchOS development.</p>
-
-
-
 
 <p>Until next time,<br/>
 <a href="https://twitter.com/theandreamazz">Andrea</a></p>
-
 ]]></content>
   </entry>
   
@@ -552,23 +319,12 @@ Also Raywenderlich&rsquo;s <a href="http://www.raywenderlich.com/store/watchos-2
     <id>http://fancypixel.github.io/blog/2015/06/19/playing-with-uidynamics-in-ios-9</id>
     <content type="html"><![CDATA[<p>UIDynamics was a welcome addition to the iOS 7 SDK. It&rsquo;s basically a physics engine backing common UIViews, allowing us to define physics traits to the UI elements. The API is fairly straightforward, so you can easily create animations and transitions that look and feel great. I already covered the basics in <a href="http://andreamazz.github.io/blog/2014/05/22/uikit-dynamics/">this article</a> a while ago, this time we&rsquo;ll be looking at what&rsquo;s new in UIDynamics in iOS 9.</p>
 
-
-
-
 <!-- More -->
-
-
 
 
 <h2>Collision Bounds</h2>
 
-
-
-
 <p>The first release of UIDynamics shipped with a collision system (provided by <a href="https://developer.apple.com/library/ios/documentation/UIKit/Reference/UICollisionBehavior_Class/">UICollisionBehavior</a>) that only supported rectangular bodies. It made sense, since <code>UIView</code>s are backed by rectangular frames, but it&rsquo;s not uncommon to have a circular view, or even better our own custom Bezier path. With iOS 9 a new property has been added to the <code>UIDynamicItem</code> protocol: <code>UIDynamicItemCollisionBoundsType</code>, which accepts one of these enum values:</p>
-
-
-
 
 <ul>
 <li><code>Rectangle</code></li>
@@ -577,12 +333,7 @@ Also Raywenderlich&rsquo;s <a href="http://www.raywenderlich.com/store/watchos-2
 </ul>
 
 
-
-
 <p>The property is readonly, so if we want to change it we need to provide our own subclass:</p>
-
-
-
 
 <pre><code class="swift">class Ellipse: UIView {
   override var collisionBoundsType: UIDynamicItemCollisionBoundsType {
@@ -591,122 +342,53 @@ Also Raywenderlich&rsquo;s <a href="http://www.raywenderlich.com/store/watchos-2
 }
 </code></pre>
 
-
-
-
 <p>This is a UIView with the default collision bound:</p>
 
-
-
-
-<p><img class="center" src="http://fancypixel.github.io/images/posts/2015-06-19/slide.gif" width="500" title="'Slide'" ></p>
-
-
-
+<p>{% img center /images/posts/2015-06-19/slide.gif 500 &lsquo;Slide&rsquo; %}</p>
 
 <p>This is the same UIView with the <code>.Ellipse</code>:</p>
 
-
-
-
-<p><img class="center" src="http://fancypixel.github.io/images/posts/2015-06-19/roll.gif" width="500" title="'Roll'" ></p>
-
-
-
+<p>{% img center /images/posts/2015-06-19/roll.gif 500 &lsquo;Roll&rsquo; %}</p>
 
 <p>This covers round views, if we want to get fancy and draw a more complex view with a coherent rigid body we can use the enum property <code>.Path</code> and also override this property:</p>
-
-
-
 
 <pre><code class="swift">var collisionBoundingPath: UIBezierPath { get }
 </code></pre>
 
-
-
-
 <p>The path can be whatever you can think of, as long as it&rsquo;s convex (this means that for any given couple of points inside the polygon, the segment between the two is always entirely contained in the polygon itself) and counter-clockwise wound.<br/>
 The convex requirement could be a significant limit, so <code>UIDynamicItemGroup</code> was introduced to specify shapes as a group of different shapes. This way as long as each shape in the group is convex we are fine even if the resulting polygon composition is concave.</p>
 
-
-
-
 <h2>Field Behavior</h2>
-
-
-
 
 <p>Field behaviors are a new type of behavior that is applied to the whole scene. The most common example that we&rsquo;ve been using implicitly all along is <code>UIGravityBehavior</code>, which applies a down force to each item in the scene. Now we can use a new set of field forces, like Radial (the forces are stronger at the center and weaker around the edges), Noise (forces with different magnitudes are scattered around the field), and so on.</p>
 
-
-
-
 <h2>Dynamic Item Behavior</h2>
 
-
-
-
 <p><code>UIDynamicItemBehavior</code> received a couple of interesting new properties:</p>
-
-
-
 
 <pre><code class="ruby">var charge: CGFloat
 var anchored: Bool
 </code></pre>
 
-
-
-
 <p><code>charge</code> represent the <em>electric charge</em> that can influence how an item moves in an electric or magnetic field (yeah, it&rsquo;s bonkers), while <code>anchored</code> basically turns a shape into a static object that participates in the collisions, but without response (if something crashes into the item, it won&rsquo;t budge), so it&rsquo;s perfect to represent something like a floor or a wall.</p>
-
-
-
 
 <h2>Attachment Behavior</h2>
 
-
-
-
 <p><code>UIAttachmentBehavior</code> was revamped and now has a sleuth of new methods and properties, like <code>frictionTorque</code> and <code>attachmentRange</code>. The attachments can now be more flexible, we can specify relative sliding movements, fixed attachments, rope attachments and what I like the most: pin attachment. Think of two objects nailed together and you get the idea.</p>
-
-
-
 
 <p>This more or less covers what&rsquo;s new in UIDynamics, now it&rsquo;s time to drop the changelog and start building something silly.</p>
 
-
-
-
 <h1>Let&rsquo;s play ball</h1>
-
-
-
 
 <p>I&rsquo;ve been spending a lot of idle time with <a href="https://itunes.apple.com/us/app/ball-king/id946496840?mt=8">Ball King</a> in the last week. It&rsquo;s a brilliant little time waster, the concept is simple but well executed. Also it adopts the same monetization policies of the Apple design winner Crossy Road: it doesn&rsquo;t bother the player in any way. Kudos.</p>
 
-
-
-
-<p><img class="center" src="http://fancypixel.github.io/images/posts/2015-06-19/ballking.jpeg" width="322" height="572" title="'Ball King'" ></p>
-
-
-
+<p>{% img center /images/posts/2015-06-19/ballking.jpeg 322 572 &lsquo;Ball King&rsquo; %}</p>
 
 <p>One thing I really like about it is the physic model of the ball and how the hoop&rsquo;s backboard reacts when it gets hit by it. Looks like a fun exercise to test out the new UIDynamics stuff listed above. Let&rsquo;s take a step by step look at how to build our own scruffy version: <a href="https://github.com/FancyPixel/BallSwift">BallSwift</a></p>
 
-
-
-
 <h2>The hoop</h2>
 
-
-
-
 <p>The basket can be created with a single UIView acting as the backboard, a couple of views with rigid bodies as the left and right arms of the hoop, and a frontmost view as the hoop itself (without a physic body). Using the previously defined class <code>Ellipse</code> we can create the visual representation of our game scene:</p>
-
-
-
 
 <pre><code class="swift">/* 
 Build the hoop, setup the world appearance
@@ -741,33 +423,15 @@ func buildViews() {
 }
 </code></pre>
 
-
-
-
 <p>Nothing new here, the hoop is created programmatically and is placed in the constant <code>CGPoint hoopPosition</code>. The order of the views is important though, since we want the hoop to be above the basket ball.</p>
-
-
-
 
 <h2>Nuts and bolts</h2>
 
-
-
-
 <p>The most important part of the hoop are the left and right <em>arms</em>. They need a physical round body (so that the collision with the ball is smooth) and need to be bolted to the board and the front hoop. These two will be basic <code>UIDynamicItem</code>s and won&rsquo;t partecipate directly in the collisions. The newly introduced pin attachment is perfect for this job, it can hold everything together quite nicely as we can see in this rather ugly drawing:</p>
 
-
-
-
-<p><img class="center" src="http://fancypixel.github.io/images/posts/2015-06-19/hoop.png" width="600" height="400" title="'Hoop'" ></p>
-
-
-
+<p>{% img center /images/posts/2015-06-19/hoop.png 600 400 &lsquo;Hoop&rsquo; %}</p>
 
 <p>The pin can be attached only to a couple of views at a time, within a given absolute spatial point:</p>
-
-
-
 
 <pre><code class="swift">let bolts = [
   CGPoint(x: hoopPosition.x + 25, y: hoopPosition.y + 85), // leftHoop -&gt; Board
@@ -782,13 +446,7 @@ zip([leftHoop, rightHoop, hoop, hoop], offsets).map({
 })
 </code></pre>
 
-
-
-
 <p>If you&rsquo;re not participating in the race to Swift&rsquo;s functional awesomeness you&rsquo;re probably not familiar with zip and map. It might seem contrived at first, but it&rsquo;s rather simple: each view is coupled with the offset point in which we&rsquo;re going to pin the attachment, resulting in an array of tuples that is then used in the map function that, as the name suggests, creates a mapping with each element of the array with the provided closure. This results in both the left and right arms of the hoop to be bolted to the board and the front hoop as follows:</p>
-
-
-
 
 <ul>
 <li>Left arm bolted to the left of the board</li>
@@ -798,12 +456,7 @@ zip([leftHoop, rightHoop, hoop, hoop], offsets).map({
 </ul>
 
 
-
-
 <p>The next step requires us to <em>hang</em> the board, letting it rest loosely, so that a collision can cause it to swivel a bit like it does in Ball King:</p>
-
-
-
 
 <pre><code class="swift">// Set the density of the hoop, and fix its angle
 // Hang the hoop
@@ -829,13 +482,7 @@ animator?.addBehavior({
   }())
 </code></pre>
 
-
-
-
 <p>The hoop is ready to go. Let&rsquo;s take care of the ball, starting with a custom subclass of <code>UIImageView</code> with a rounded physics body, just like the <code>Ellipse</code> class:</p>
-
-
-
 
 <pre><code class="swift">class Ball: UIImageView {
   override var collisionBoundsType: UIDynamicItemCollisionBoundsType {
@@ -844,13 +491,7 @@ animator?.addBehavior({
 }
 </code></pre>
 
-
-
-
 <p>We can then istantiate the ball as a common UIImageView:</p>
-
-
-
 
 <pre><code class="swift">let ball: Ball = {
   let ball = Ball(frame: CGRect(x: 0, y: 0, width: 28, height: 28))
@@ -859,13 +500,7 @@ animator?.addBehavior({
 }()
 </code></pre>
 
-
-
-
 <p>Finally we set its physical properties:</p>
-
-
-
 
 <pre><code class="swift">// Set the elasticity and density of the ball
 animator?.addBehavior({
@@ -882,23 +517,11 @@ animator?.addBehavior({
   }())
 </code></pre>
 
-
-
-
 <p>In this bit of code I set the elasticity (how much it should bounce after a collision), density (think of it as the <em>weight</em>) and a handy action closure that resets the world state when the ball exits the play area (the main view).</p>
-
-
-
 
 <h2>Collisions and gravity</h2>
 
-
-
-
 <p>I mentioned the new <code>anchored</code> property of <code>UIDynamicItemBehavior</code>, which disables the dynamic behavior of an object while keeping it in the collision&rsquo;s loop. Sounds like a great way to build a steady floor:</p>
-
-
-
 
 <pre><code class="swift">// Anchor the floor
 animator?.addBehavior({
@@ -908,26 +531,14 @@ animator?.addBehavior({
   }())
 </code></pre>
 
-
-
-
 <p>Forget to set this property and you&rsquo;ll be scratching your head a lot. I know I did.<br/>
 Ok, everything is set, it just needs some gravity and a set of collisions:</p>
-
-
-
 
 <pre><code class="swift">animator?.addBehavior(UICollisionBehavior(items: [leftHoop, rightHoop, floor, ball]))
 animator?.addBehavior(UIGravityBehavior(items: [ball]))
 </code></pre>
 
-
-
-
 <p>The gravity is a field behavior that applies a down force of 1 point per second as default. The collision behavior takes as parameter only the views that should collide with each other. The world is set up, now we can apply an instantaneous force to the ball and keep our fingers crossed:</p>
-
-
-
 
 <pre><code class="swift">let push = UIPushBehavior(items: [ball], mode: .Instantaneous)
 push.angle = -1.35
@@ -935,27 +546,14 @@ push.magnitude = 1.56
 animator?.addBehavior(push)
 </code></pre>
 
-
-
-
-<p><img class="center" src="http://fancypixel.github.io/images/posts/2015-06-19/ball.gif" width="500" height="820" title="'BallSwift'" ></p>
-
-
-
+<p>{% img center /images/posts/2015-06-19/ball.gif 500 820 &lsquo;BallSwift&rsquo; %}</p>
 
 <p>And there you go, it&rsquo;s really rough around the edges, but that was a lot of fun to build (yes, the clouds and the bushes are the same drawing, like in <a href="https://www.youtube.com/watch?v=ai7d1K4Yf6A">Super Mario</a>).<br/>
 As always you can find the source on our <a href="https://github.com/FancyPixel/BallSwift">GitHub page</a>.</p>
 
-
-
-
 <p>Until next time,</p>
 
-
-
-
 <p>Andrea - <em><a href="https://twitter.com/theandreamazz">@theandreamazz</a></em></p>
-
 ]]></content>
   </entry>
   
@@ -968,23 +566,12 @@ As always you can find the source on our <a href="https://github.com/FancyPixel/
 Like with iOS8 the NDA is more relaxed this year, but it still forbids showing screenshots. In any case, you&rsquo;ll find the full sample <a href="https://github.com/FancyPixel/text-notification-sample">on GitHub</a>.<br/>
 Let&rsquo;s take a step by step look at what changed.</p>
 
-
-
-
 <!-- More -->
-
-
 
 
 <h1>Requesting the permission</h1>
 
-
-
-
 <p>First of all we need to ask the permission to the user before we can start sending notifications. We start off by building a new <code>UIMutableUserNotificationAction</code>, that alongside the main properties of the notification will also specify the desired behavior:</p>
-
-
-
 
 <pre><code class="swift">let textAction = UIMutableUserNotificationAction()
 textAction.identifier = "TEXT_ACTION"
@@ -995,13 +582,7 @@ textAction.destructive = false
 textAction.behavior = .TextInput
 </code></pre>
 
-
-
-
 <p>The <code>behavior</code> property is a new addition of iOS9 and holds the <code>UIUserNotificationActionBehavior</code> enum:</p>
-
-
-
 
 <pre><code class="swift">enum UIUserNotificationActionBehavior : UInt {
   case Default // the default action behavior
@@ -1009,13 +590,7 @@ textAction.behavior = .TextInput
 }
 </code></pre>
 
-
-
-
 <p>With that out of the way the rest of the configuration didn&rsquo;t change much from iOS8:</p>
-
-
-
 
 <pre><code class="swift">let category = UIMutableUserNotificationCategory()
 category.identifier = "CATEGORY_ID"
@@ -1027,35 +602,17 @@ let settings = UIUserNotificationSettings(forTypes: [.Alert, .Badge, .Sound], ca
 UIApplication.sharedApplication().registerUserNotificationSettings(settings)
 </code></pre>
 
-
-
-
 <p>One minor difference here is due to the new Swift 2 syntax, instead of:</p>
-
-
-
 
 <pre><code class="swift">UIUserNotificationType.Alert | UIUserNotificationType.Sound | UIUserNotificationType.Badge
 </code></pre>
 
-
-
-
 <p>we need to use the much nicer</p>
-
-
-
 
 <pre><code class="swift">[.Alert, .Sound, .Badge]
 </code></pre>
 
-
-
-
 <p>That&rsquo;s it, once the user grants the permission we can schedule a new local notification to test this out:</p>
-
-
-
 
 <pre><code class="swift">static func scheduleNotification() {
     let now: NSDateComponents = NSCalendar.currentCalendar().components([.Hour, .Minute], fromDate: NSDate())
@@ -1075,45 +632,23 @@ UIApplication.sharedApplication().registerUserNotificationSettings(settings)
 }
 </code></pre>
 
-
-
-
 <h1>Receiving the response</h1>
 
-
-
-
 <p>Once the user activates the action and writes the reply our <code>AppDelegate</code> is called, receiving a new delegate message introduced in iOS9:</p>
-
-
-
 
 <pre><code class="swift">func application(application: UIApplication, handleActionWithIdentifier identifier: String?, forLocalNotification notification: UILocalNotification, withResponseInfo responseInfo: [NSObject : AnyObject], completionHandler: () -&gt; Void) {
 </code></pre>
 
-
-
-
 <p>The text is stored in the <code>responseInfo</code> under the <code>UIUserNotificationActionResponseTypedTextKey</code> key:</p>
-
-
-
 
 <pre><code class="swift">let reply = responseInfo[UIUserNotificationActionResponseTypedTextKey]
 </code></pre>
 
-
-
-
 <p>And that&rsquo;s it. A welcome addition to the API, let&rsquo;s hope that all the major messaging apps will adopt it soon.<br/>
 You can find the full sample <a href="https://github.com/FancyPixel/text-notification-sample">here</a>. Once you run the app and schedule the notification, hop back to the home screen and you&rsquo;ll be able to reply with some text, that will be displayed in the app&rsquo;s view controller.</p>
 
-
-
-
 <p>Until next time.<br/>
 Andrea - <a href="https://twitter.com/theandreamazz">@theandreamazz</a></p>
-
 ]]></content>
   </entry>
   
@@ -1126,17 +661,10 @@ Andrea - <a href="https://twitter.com/theandreamazz">@theandreamazz</a></p>
 If you read our latest post on <a href="http://fancypixel.github.io/blog/2015/03/29/share-data-between-watchkit-and-your-app-with-realm/">how to share data with Realm</a>, you&rsquo;ll find a lot of code in common in this app, but there&rsquo;s also quite a bit of new stuff that&rsquo;s worth checking out. For starters I personally really like the water meter that follows your device movement, made possible by the amazing <a href="https://github.com/dulaccc/DPMeterView">DPMeterView</a>. You might also like the Facebook Paper-like wavy effect in the onboarding, provided by one of my pride and joys, <a href="https://github.com/andreamazz/AMWaveTransition">AMWaveTransition</a>.<br/>
 You&rsquo;ll find the source <a href="https://github.com/FancyPixel/gulps">here</a>.</p>
 
-
-
-
 <p>Let us know what you think.<br/>
 Until next time.</p>
 
-
-
-
 <p>Andrea - <a href="https://twitter.com/theandreamazz">@theandreamazz</a></p>
-
 ]]></content>
   </entry>
   
@@ -1148,70 +676,35 @@ Until next time.</p>
     <content type="html"><![CDATA[<p>It&rsquo;s been a busy year for iOS developers. We got a slew of new toys to play with: a new version of iOS, new frameworks, a new language, new screen sizes and some new hardware to put on our wrists, just as soon as we thought that watches were anachronistic.<br/>
 New technology is always exciting, but keeping up to date can be a daunting task when deadlines keep getting closer. Lately I&rsquo;ve been taking some time off to delve deeper in these new topics and build a simple app out of it (that we are planning to open source). At the time of this writeup the app is still waiting to be reviewed, so we&rsquo;re going to just focus on something that I learned in the process and that can be useful to a lot of other iOS devs: sharing data between your app and its WatchKit extension, using <a href="http://realm.io/">Realm</a>.</p>
 
-
-
-
 <!-- More -->
-
-
 
 
 <h1>Why Realm</h1>
 
-
-
-
 <p>Realm is a great replacement for both SQLite and Core Data, it offers a quick and painless way to persist data in your iOS (and Android) app. The thing that makes it so great is the ease of use, it reduces your boilerplate code to next to nothing (I&rsquo;m watching you, Core Data), keeping things at a high level of abstraction (I&rsquo;m watching you SQLite) and&hellip; it&rsquo;s fast. It really is a brilliant piece of software, and I urge you to checkout the <a href="http://realm.io/docs/cocoa/0.91.1/">official documentation</a> if you&rsquo;re in need of a persistence framework for your app.</p>
 
-
-
-
 <h1>The sample app</h1>
-
-
-
 
 <p>We&rsquo;re going to learn how to share data between an app and its WatchKit extension, and what better way to use a sample app as reference?.
 I&rsquo;m not a fan of TODO app demos, they always feel&hellip; unimaginative&hellip; but I have to admit that they are the perfect sample for a task like this. So, bear with me, let me introduce to you another TODO sample app: <em>Done!</em>, a simple TODO list where we can add items and mark them as done from our Apple Watch.</p>
 
-
-
-
 <h1>Setting up Realm</h1>
-
-
-
 
 <p>WatchKit extensions are just another target inside your app, just like Today extensions, so they are packed alongside your app, but they have their own life, and most importantly, their own bundle identifier. This means that data stored within an app is not visible to the extension and vice versa. Apple offers a way to solve the issue through app groups.<br/>
 App groups, like bundle identifiers, are defined by a reverse URI and they are prefixed with <code>group.</code>. They let you share data between your apps and are tightly bound to your provisioning profile (luckily Xcode handles their creation in your developer portal with ease).<br/>
 We can take advantage of that to create our Realm database in a shared space that will be visible (and writeable) by both our app and the app&rsquo;s WatchKit extension. Let&rsquo;s start by creating the group in our project&rsquo;s capabilities section:</p>
 
-
-
-
-<p><img class="center" src="http://fancypixel.github.io/images/posts/2015-03-29/appgroup.png" width="640" height="150" title="'App groups'" ></p>
-
-
-
+<p>{% img center /images/posts/2015-03-29/appgroup.png 640 150 &lsquo;App groups&rsquo; %}</p>
 
 <p>Once this is out of the way we can tell Realm to store the database inside the group.
 We&rsquo;ll do so in our AppDelegate&rsquo;s <code>application(application: didFinishLaunchingWithOptions launchOptions:)</code> function:</p>
-
-
-
 
 <pre><code>let directory: NSURL = NSFileManager.defaultManager().containerURLForSecurityApplicationGroupIdentifier("group.it.fancypixel.Done")!
 let realmPath = directory.path!.stringByAppendingPathComponent("db.realm")
 RLMRealm.setDefaultRealmPath(realmPath)
 </code></pre>
 
-
-
-
 <p>That&rsquo;s it, Realm is ready to go, we just need to define a model to persist. Let&rsquo;s do it:</p>
-
-
-
 
 <pre><code>// Entry.swift
 import Realm
@@ -1222,18 +715,9 @@ class Entry: RLMObject {
 }
 </code></pre>
 
-
-
-
 <h1>ViewController</h1>
 
-
-
-
 <p>The ViewController handling the TODO list will be rather simple, it&rsquo;ll hold a plain <code>UITableView</code> with a custom header presenting the <code>UITextField</code> for the user&rsquo;s input, nothing fancy:</p>
-
-
-
 
 <pre><code>// ViewController.swift
 import Realm
@@ -1302,24 +786,12 @@ class ViewController: UIViewController, UITableViewDelegate, UITableViewDataSour
 }
 </code></pre>
 
-
-
-
 <p>As you can see we are retrieving the table view&rsquo;s items from Realm with a simple call:</p>
-
-
-
 
 <pre><code>Entry.allObjects()
 </code></pre>
 
-
-
-
 <p>and storing the changes with a couple of lines:</p>
-
-
-
 
 <pre><code>realm.beginWriteTransaction()
 let entry = Entry
@@ -1329,44 +801,20 @@ realm.addObject(entry)
 realm.commitWriteTransaction()
 </code></pre>
 
-
-
-
 <p>If you worked with Core Data in the past you should have a better understanding of my claim <em>&ldquo;less boilerplate code&rdquo;</em>.</p>
 
-
-
-
 <h1>WatchKit</h1>
-
-
-
 
 <p>Ok, new technology, new framework, so much to learn, right?<br/>
 Well, it turns out that Apple did some thinking on this, and for what I witnessed, developing a Watch app is going to feel familiar for a lot of Cocoa and Cocoa Touch developers, albeit with some significant philosophical changes. First things first, let&rsquo;s create a new target holding the Watch app:</p>
 
-
-
-
-<p><img class="center" src="http://fancypixel.github.io/images/posts/2015-03-29/newtarget.png" width="640" height="340" title="'WatchKit target'" ></p>
-
-
-
+<p>{% img center /images/posts/2015-03-29/newtarget.png 640 340 &lsquo;WatchKit target&rsquo; %}</p>
 
 <p>Then, the layout. We won&rsquo;t be using Autolayout, but something reminiscing a simplified version of Android&rsquo;s linear and relative layouts (no need to touch beefy XML files though, storyboards are still there for us). The layout for this will be a <code>WKInterfaceTable</code> with a custom <code>TableRowController</code>, holding a <code>WKInterfaceImage</code> and a <code>WKInterfaceLabel</code>:</p>
 
-
-
-
-<p><img class="center" src="http://fancypixel.github.io/images/posts/2015-03-29/storyboard.png" width="600" height="260" title="'WatchKit storyboard'" ></p>
-
-
-
+<p>{% img center /images/posts/2015-03-29/storyboard.png 600 260 &lsquo;WatchKit storyboard&rsquo; %}</p>
 
 <p>The custom <code>TableRowController</code> is a plain class with a couple of properties, so let&rsquo;s take a look at this first:</p>
-
-
-
 
 <pre><code>class EntryTableRowController: NSObject {
     @IBOutlet var imageCheck: WKInterfaceImage!
@@ -1374,14 +822,8 @@ Well, it turns out that Apple did some thinking on this, and for what I witnesse
 }
 </code></pre>
 
-
-
-
 <p>Pretty straightforward, think of it as the equivalent of a custom <code>UITableViewCell</code>.<br/>
 Let&rsquo;s take a look on how to populate the table:</p>
-
-
-
 
 <pre><code>override func awakeWithContext(context: AnyObject?) {
     super.awakeWithContext(context)
@@ -1409,16 +851,10 @@ func reloadTableData() {
 }
 </code></pre>
 
-
-
-
 <p>That&rsquo;s a little different from what we&rsquo;re used in UIKit. No <code>delegate</code> nor <code>dataSource</code>, in WatchKit we explicitly define every row before showing the table.<br/>
 Also, as you can see in the <code>awakeWithContext</code> function, we are setting up Realm as we did in the main app. As a side note, the pieces of code that are shared between the two targets (in our case, everything concerning the model) should be moved in a custom framework to avoid code duplication. For the purpose of this sample I opted to duplicate the Realm initialization and shared the model between the two targets, but in a more structured app I would definitely take the framework route.
 If we build and run we can add an item on the phone, and once we reload the app we&rsquo;ll see the same item in the watch extension too.<br/>
 That doesn&rsquo;t feel very responsive though, right? We&rsquo;ll fix that in a bit, but first let&rsquo;s add the ability to mark an item as <em>done</em> from the watch:</p>
-
-
-
 
 <pre><code class="">override func table(table: WKInterfaceTable, didSelectRowAtIndex rowIndex: Int) {
     let dataSource = Entry.allObjects()
@@ -1431,59 +867,29 @@ That doesn&rsquo;t feel very responsive though, right? We&rsquo;ll fix that in a
 }
 </code></pre>
 
-
-
-
 <p>That pretty much covers it. Right now it&rsquo;s even more apparent that even if the two apps are communicating, there&rsquo;s no real sense of interaction, since we need to reload the app to see the changes.</p>
-
-
-
 
 <h1>Syncing data</h1>
 
-
-
-
 <p>We need to somehow advertise that our watch app or our main app performed something meaningful. There are <em>official</em> ways to do that, and you can read more about them on <a href="http://natashatherobot.com/watchkit-open-ios-app-from-watch/">this blog post from Natasha The Robot</a>, but in this case I want to show you how a brilliant library called <a href="https://github.com/mutualmobile/MMWormhole">MMWormHole</a> can abstract this task for us.</p>
-
-
-
 
 <h2>MMWormHole</h2>
 
-
-
-
 <p>MMWormhole creates a bridge between an app and its extensions. The API is clear and concise and it has a delightfully geeky name. It works like a pub/sub system, one end registers its interest for a kind of message (defined by a string identifier), and the other end can broadcast a new event. When the event is raised the subscriber&rsquo;s handler is fired. Sounds like something we can leverage from our app. Let&rsquo;s start by registering interest in <code>watch</code> updates on our main app:</p>
-
-
-
 
 <pre><code>self.wormhole.listenForMessageWithIdentifier("watchUpdate", listener: { (_) -&gt; Void in
     self.reloadEntries()
 })
 </code></pre>
 
-
-
-
 <p>and on our watch app we&rsquo;ll listen for <code>main</code> updates:</p>
-
-
-
 
 <pre><code>self.wormhole.listenForMessageWithIdentifier("mainUpdate", listener: { (_) -&gt; Void in
     self.reloadTableData()
 })
 </code></pre>
 
-
-
-
 <p>And that&rsquo;s it. When something changes in our model we just need to call these function:</p>
-
-
-
 
 <pre><code>// From the watch
 self.wormhole.passMessageObject("update", identifier: "watchUpdate")
@@ -1492,69 +898,32 @@ self.wormhole.passMessageObject("update", identifier: "watchUpdate")
 self.wormhole.passMessageObject(someObject, identifier: "mainUpdate")
 </code></pre>
 
-
-
-
 <h1>Realm notifications</h1>
-
-
-
 
 <p><em>Update</em></p>
 
-
-
-
 <p>Once this post was live, Tim Anglade from Realm reached out to me and was kind enough to point out that there&rsquo;s a built-in notification system in Realm, so MMWormHole in this case isn&rsquo;t really needed. The API is really easy to use and requires no configuration, here&rsquo;s how it works:</p>
-
-
-
 
 <pre><code>realmToken = RLMRealm.defaultRealm().addNotificationBlock { note, realm in
     self.reloadEntries()
 }
 </code></pre>
 
-
-
-
 <p>As long as we keep a strong pointer to the token, the system fires the notification block as soon as a write transaction is committed. You can find the updated code in the sample app.</p>
-
-
-
 
 <h2>Demo</h2>
 
-
-
-
 <p>Here&rsquo;s the demo app in all of its glory:</p>
 
-
-
-
-<p><img class="center" src="http://fancypixel.github.io/images/posts/2015-03-29/screenshot.gif" width="600" title="'Done'" ></p>
-
-
-
+<p>{% img center /images/posts/2015-03-29/screenshot.gif 600 &lsquo;Done&rsquo; %}</p>
 
 <p>As you can see it&rsquo;s really easy to bootstrap a simple app for WatchKit, and thanks to a couple of great open source libraries adding persistence and interactivity is a painless effort. A big <em>thank you</em> to both the Realm team and Mutual Mobile for the amazing work on MMWormHole.</p>
 
-
-
-
 <p>As usual, you&rsquo;ll find the source code of the demo app on our <a href="https://github.com/FancyPixel/done-swift">GitHub page</a>. Feel free to leave a comment, we&rsquo;d love to hear your feedback.</p>
-
-
-
 
 <p>Until next time,</p>
 
-
-
-
 <p>Andrea - <em><a href="https://twitter.com/theandreamazz">@theandreamazz</a></em></p>
-
 ]]></content>
   </entry>
   
