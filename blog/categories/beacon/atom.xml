@@ -4,7 +4,7 @@
   <title><![CDATA[Category: beacon | Fancy Pixel]]></title>
   <link href="http://fancypixel.github.io/blog/categories/beacon/atom.xml" rel="self"/>
   <link href="http://fancypixel.github.io/"/>
-  <updated>2015-11-25T10:19:18+01:00</updated>
+  <updated>2015-11-25T10:19:30+01:00</updated>
   <id>http://fancypixel.github.io/</id>
   <author>
     <name><![CDATA[Fancy Pixel]]></name>
@@ -175,11 +175,11 @@ Now that all that is out of the way, let&rsquo;s get to the code:</p>
 
 <p>And there we go, the iOS app:</p>
 
-<p>{% img center /images/posts/2014-07-01/iOS.png &lsquo;Who&rsquo;s Fancy iOS&rsquo; %}</p>
+<p><img class="center" src="/images/posts/2014-07-01/iOS.png" title="&lsquo;Who&rsquo;s Fancy iOS&rsquo;" ></p>
 
 <p>and the web page:</p>
 
-<p>{% img center /images/posts/2014-07-01/rails.png &lsquo;Who&rsquo;s Fancy Rails&rsquo; %}</p>
+<p><img class="center" src="/images/posts/2014-07-01/rails.png" title="&lsquo;Who&rsquo;s Fancy Rails&rsquo;" ></p>
 
 <p>You can find the rails and iOS code <a href="https://github.com/FancyPixel/whosfancy-rails">here</a> and <a href="https://github.com/FancyPixel/whosfancy-ios">here</a>.</p>
 
