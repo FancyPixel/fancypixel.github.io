@@ -297,7 +297,7 @@ func quantity() -> Double {
 {% img center /images/posts/2015-11-24/thereitis.gif 400 'Jeff' %}
 
 
-You can head to the [GitHub repo](https://github.com/FancyPixel/gulps) of Gulps and compile it, or even better download it from the store (once the build passes review), and you'll notice that the WatchOS app is a lot snappier, and the communication time between the two devices is pretty fast.  
+You can head to the [GitHub repo](https://github.com/FancyPixel/gulps) of Gulps and compile it, or even better download it from the store, and you'll notice that the WatchOS app is a lot snappier, and the communication time between the two devices is pretty fast.  
 
 I'm pretty happy with it, but it required a good dose of patience. `WatchConnectivity` works great when you are learning it with a simple demo app, but once you factor in an app just a little bit more complex, you're in for a treat. In the end it all boils down to figuring out what _needs_ to be transfered and _when_. It doesn't help that getting the app compiled on a real device requires quite a lot time. You'll be seeing the [loading spinner](https://twitter.com/theandreamazz/status/658968255349063682) A LOT, soldier on.  
 With that being said, in the end the app runs way smoother, so it's all worth it.
