@@ -4,7 +4,7 @@
   <title><![CDATA[Category: react | Fancy Pixel]]></title>
   <link href="http://fancypixel.github.io/blog/categories/react/atom.xml" rel="self"/>
   <link href="http://fancypixel.github.io/"/>
-  <updated>2015-11-25T10:19:30+01:00</updated>
+  <updated>2015-11-27T09:05:17+01:00</updated>
   <id>http://fancypixel.github.io/</id>
   <author>
     <name><![CDATA[Fancy Pixel]]></name>
@@ -1191,7 +1191,7 @@ end
 
 <p>That&rsquo;s it. Migrate, run the server, and create a user via the console. You should get something like this:</p>
 
-<pre><code>$ curl localhost:3000/v1/login --ipv4 --data "usernme=user@example.com&amp;password=password"
+<pre><code>$ curl localhost:3000/v1/login --ipv4 --data "username=user@example.com&amp;password=password"
 {
   "token_type": "Bearer",
   "user_id": 1,
