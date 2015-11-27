@@ -4,7 +4,7 @@
   <title><![CDATA[Category: api | Fancy Pixel]]></title>
   <link href="http://fancypixel.github.io/blog/categories/api/atom.xml" rel="self"/>
   <link href="http://fancypixel.github.io/"/>
-  <updated>2015-09-21T09:34:10+02:00</updated>
+  <updated>2015-11-25T10:19:30+01:00</updated>
   <id>http://fancypixel.github.io/</id>
   <author>
     <name><![CDATA[Fancy Pixel]]></name>
@@ -1327,7 +1327,7 @@ The gem Devise used to implement a <code>token_authenticatable</code> strategy, 
 
 <h2>Token authentication</h2>
 
-<p>Token authentication was removed from Devise a couple of years ago, <a href="http://blog.plataformatec.com.br/2013/08/devise-3-1-now-with-more-secure-defaults/">this link</a> explains why. We have to implement it for ourselves, but it&rsquo;s quite easy. The token will be composed of two informations: the user&rsquo;s id followed by the token itself, separated by a <code>:</code>. We&rsquo;ll be using the user&rsquo;s database id for this sample, for semplicity&rsquo;s sake, but it&rsquo;s obviously not a smart thing to do.
+<p>Token authentication was removed from Devise a couple of years ago, <a href="http://blog.plataformatec.com.br/2013/08/devise-3-1-now-with-more-secure-defaults/">this link</a> explains why. We have to implement it for ourselves, but it&rsquo;s quite easy. The token will be composed of two informations: the user&rsquo;s id followed by the token itself, separated by a <code>:</code>. We&rsquo;ll be using the user&rsquo;s database id for this sample, for simplicity&rsquo;s sake, but it&rsquo;s obviously not a smart thing to do.
 First things first, we&rsquo;ll add an <code>access_token</code> to the user (and a username too):</p>
 
 <pre><code class="ruby">class AddAccessTokenToUser &lt; ActiveRecord::Migration
