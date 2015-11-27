@@ -235,7 +235,7 @@ end
 That's it. Migrate, run the server, and create a user via the console. You should get something like this:
 
 ~~~
-$ curl localhost:3000/v1/login --ipv4 --data "usernme=user@example.com&password=password"
+$ curl localhost:3000/v1/login --ipv4 --data "username=user@example.com&password=password"
 {
   "token_type": "Bearer",
   "user_id": 1,
