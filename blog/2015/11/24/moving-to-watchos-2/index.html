@@ -45,7 +45,7 @@ In this post we&rsquo;ll cover how to share data between the main app and the wa
 
 <h2>Gulps</h2>
 
-<p>The previous version of <a href="https://itunes.apple.com/us/app/gulps/id979057304?ls=1&amp;mt=8">Gulps</a> relied on Apple&rsquo;s <a href="https://developer.apple.com/library/prerelease/ios/documentation/General/Conceptual/ExtensibilityPG/ExtensionScenarios.html#//apple_ref/doc/uid/TP40014214-CH21-SW1">App grouping</a> to share data between the app and the watch extension. The data was stored on <a href="http://ream.io">Realm</a>, and thanks to its notification system, the watch app was always kept up to date when a change occurred. This was possible because the watch extension used to live on the phone alongside the main app. It was a brilliant system, and so easy to implement&hellip; my heart sank when Apple announced that they were moving the watch extension on the watch itself. I knew that a storm of refactoring was coming. Before opening that can of worms, let&rsquo;s reminisce about the good old times.<br/>
+<p>The previous version of <a href="https://itunes.apple.com/us/app/gulps/id979057304?ls=1&amp;mt=8">Gulps</a> relied on Apple&rsquo;s <a href="https://developer.apple.com/library/prerelease/ios/documentation/General/Conceptual/ExtensibilityPG/ExtensionScenarios.html#//apple_ref/doc/uid/TP40014214-CH21-SW1">App grouping</a> to share data between the app and the watch extension. The data was stored on <a href="http://realm.io">Realm</a>, and thanks to its notification system, the watch app was always kept up to date when a change occurred. This was possible because the watch extension used to live on the phone alongside the main app. It was a brilliant system, and so easy to implement&hellip; my heart sank when Apple announced that they were moving the watch extension on the watch itself. I knew that a storm of refactoring was coming. Before opening that can of worms, let&rsquo;s reminisce about the good old times.<br/>
 This is the setup for a WatchOS 1 app:</p>
 
 <pre><code class="swift">realmToken = RLMRealm.defaultRealm().addNotificationBlock { note, realm in
@@ -382,7 +382,7 @@ Follow me on
 <a class="social google_plus" href="http://plus.google.com/+FancypixelIt" title="Google+">Google+</a>
 
 
-<section class="copyright">All content copyright <a href="/">Fancy Pixel</a> © 2015 • All rights reserved.</section>
+<section class="copyright">All content copyright <a href="/">Fancy Pixel</a> © 2016 • All rights reserved.</section>
 
 <section class="poweredby">Casper theme by <a class="icon-ghost" href="http://tryghost.org">Ghost</a> &amp; Published with <a href="http://octopress.org">Octopress</a></section>
 
